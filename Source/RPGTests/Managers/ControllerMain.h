@@ -30,6 +30,8 @@ public:
 protected:
 	
 	AActor* GetHitSelectable() const;
+	void HandleHighlight(const bool bHighlight);
+	void HandleSelected(const bool bSelect);
 	void ClearHitSelectable();
 
 private:

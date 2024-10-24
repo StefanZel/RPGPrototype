@@ -8,6 +8,7 @@
 #include "PlayerMain.generated.h"
 
 class UInputMappingContext;
+class AControllerMain;
 class UPlayerInputDataAsset;
 class UCameraComponent;
 class USpringArmComponent;
@@ -22,14 +23,6 @@ public:
 	APlayerMain(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditAnywhere)
-	int gold;
-
-	UFUNCTION()
-	void AddGold();
-
-	UFUNCTION()
-	void RemoveGold();
 
 protected:
 
@@ -49,6 +42,8 @@ protected:
 
 	UPROPERTY()
 	UPlayerInputDataAsset* InputData;
+	
+
 
 	/** Input Functions **/
 	virtual void Input_Move(const FInputActionValue& InputActionValue);

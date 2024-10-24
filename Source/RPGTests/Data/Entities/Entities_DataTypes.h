@@ -2,8 +2,6 @@
 
 #include "Entities_DataTypes.generated.h"
 
-class AEntities_Enums;
-
 UENUM()
 enum class EEntities_AvailableTypes
 {
@@ -11,4 +9,15 @@ enum class EEntities_AvailableTypes
 	Ally,
 	Enemy,
 	Resource
+};
+
+UENUM()
+enum class EEntities_Sizes
+{
+	None,
+	NormalSmall,
+	NormalAverage,
+	NormalLarge,
+	FourLegsSmall,
+	FourLegsLarge
 };

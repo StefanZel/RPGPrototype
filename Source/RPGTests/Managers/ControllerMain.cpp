@@ -3,7 +3,9 @@
 #include "RPGTests/Data/AStaticGameData.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
-
+#include "RPGTests/Component/Entities_Component.h"
+#include "RPGTests/Component/Entities_DecalComponent.h"
+#include "DrawDebugHelpers.h"
 
 
 AControllerMain::AControllerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -60,6 +62,13 @@ void AControllerMain::Select()
 	ClearHitSelectable();
 
 	HitSelectable = GetHitSelectable();
+
+	if (HitSelectable)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Selected Actor is %s"), *HitSelectable->GetName());
+	}
+	//HandleSelected(true);
+	//HandleHighlight(true);
 }
 
 AActor* AControllerMain::GetHitSelectable() const
@@ -75,6 +84,7 @@ AActor* AControllerMain::GetHitSelectable() const
 		{
 			if (Hit.bBlockingHit && Hit.GetActor() != nullptr)
 			{
+				DrawDebugLine(GetWorld(), WorldLocation, WorldLocation + (WorldDirection + 10000.f), FColor::Green, false, 1.0f, 0, 1.0f);
 				return Hit.GetActor();
 			}
 		}
@@ -83,8 +93,33 @@ AActor* AControllerMain::GetHitSelectable() const
 	return nullptr;
 }
 
+void AControllerMain::HandleHighlight(const bool bHighlight)
+{
+	if(HitSelectable != nullptr)
+	{
+		if(UEntities_Component* Entity = UEntities_Component::FindEntityComponent(HitSelectable))
+		{
+			Entity->Highlight(bHighlight);
+		}
+	}
+}
+
+void AControllerMain::HandleSelected(const bool bSelect)
+{
+	if (HitSelectable != nullptr)
+	{
+		if (UEntities_Component* Entity = UEntities_Component::FindEntityComponent(HitSelectable))
+		{
+			Entity->Select(bSelect);
+		}
+	}
+}
+
 void AControllerMain::ClearHitSelectable()
 {
+	HandleSelected(false);
+	HandleHighlight(false);
+
 		if(HitSelectable != nullptr)
 		{
 			HitSelectable = nullptr;

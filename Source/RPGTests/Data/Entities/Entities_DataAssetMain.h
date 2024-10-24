@@ -27,8 +27,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	EEntities_AvailableTypes EntityType;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
+	EEntities_Sizes EntitySize;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Selection)
-	TSoftObjectPtr<UMaterialInstance> HighLightMaterial;
+	TSoftObjectPtr<UMaterialInstance> HighlightMaterial;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Selection)
 	TSoftObjectPtr<UMaterialInstance> SelectedMaterial;

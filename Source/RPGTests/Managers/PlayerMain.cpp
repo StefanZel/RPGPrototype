@@ -2,12 +2,13 @@
 
 
 #include "PlayerMain.h"
-#include "Controllermain.h"
+#include "ControllerMain.h"
 #include "RPGTests/Data/Inputs/PlayerInputDataAsset.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "RPGTests/Selectable.h"
 
 
 APlayerMain::APlayerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -216,23 +217,13 @@ void APlayerMain::Input_Rotate(const FInputActionValue& InputActionValue)
 
 void APlayerMain::Input_Select(const FInputActionValue& InputActionValue)
 {
-
-}
-
-
-void APlayerMain::AddGold()
-{
-	gold += 10;
-
-	UE_LOG(LogTemp, Warning, TEXT("Added gold %d"), gold);
-
-}
-void APlayerMain::RemoveGold()
-{
-	gold -= 10;
-
-	UE_LOG(LogTemp, Warning, TEXT("Removed gold %d"), gold);
-
+	if (GetController())
+	{
+		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
+		{
+			Selectable->Select();
+		}
+	}
 }
 
 
