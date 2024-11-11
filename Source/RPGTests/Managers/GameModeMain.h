@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "ControllerMain.h"
 #include "GameModeMain.generated.h"
 
 class UGameMode_BaseAsset;
@@ -20,17 +21,38 @@ public:
 
 	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
 	virtual void InitGameState() override;
+	virtual void BeginPlay() override;
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
+	virtual void SetPlayerStartLocation(const FVector Location) { PlayerStartLocation = Location; }
+	virtual FVector GetPlayerStartLocation() const { return PlayerStartLocation; }
 
 protected:
 	void InitGameData();
 	void HandleGameDataAssignment();
 	void OnGameDataAssigned();
 	void OnGameDataLoaded();
+	void OnEntityDataLoaded();
+	void GenerateEntityLocations(const UGameMode_BaseAsset* GameData);
+	void CreateEntities();
+	void CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset, const int32 EntityIndex);
 
 	UGameMode_BaseAsset* GetGameData();
 
 	UPROPERTY()
 	FPrimaryAssetId CurrentGameDataAssetID;
+
+	UPROPERTY()
+	FVector PlayerStartLocation;
+
+
+	UPROPERTY()
+	TArray<AActor*> PlayerEntities;
+
+	UPROPERTY()
+	TArray<FVector> EntitySpawnLocations;
+
+	UPROPERTY()
+	AControllerMain* MainController;
 	
 private:
 

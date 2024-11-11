@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
+#include "RPGTests/Data/Entities/Entities_DataTypes.h"
 #include "Materials/MaterialInterface.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
@@ -19,14 +20,13 @@ class RPGTESTS_API UEntities_Component : public UActorComponent
 public:
 	UEntities_Component(const FObjectInitializer& ObjectInitializer);
 
+	void Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex);
 	UFUNCTION()
 	static UEntities_Component* FindEntityComponent(const AActor* Entity) { return (Entity ? Entity->FindComponentByClass<UEntities_Component>() : nullptr); }
+	virtual FEntitiesSelection CreateSelection(const EEntities_AvailableTypes SelectionType);
 	
-	UPROPERTY(BlueprintReadWrite, EditDefaultsOnly, Category = "Player Input Settings")
-	UDataAsset* EntityDataAsset;
-
 	UPROPERTY()
-	UEntities_DataAssetMain* EntityData;
+	int32 EntityIndex ;
 
 	FOnSelectedChangeDelegate OnSelectedChange;
 	virtual void Highlight(const bool bHighlight = true);

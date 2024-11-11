@@ -65,7 +65,7 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 				EnhancedInputComponent->BindAction(InputData->Look, ETriggerEvent::Triggered, this, &APlayerMain::Input_Look);
 				EnhancedInputComponent->BindAction(InputData->Zoom, ETriggerEvent::Triggered, this, &APlayerMain::Input_Zoom);
 				EnhancedInputComponent->BindAction(InputData->Rotate, ETriggerEvent::Triggered, this, &APlayerMain::Input_Rotate);
-				EnhancedInputComponent->BindAction(InputData->Select, ETriggerEvent::Triggered, this, &APlayerMain::Input_Select);
+				EnhancedInputComponent->BindAction(InputData->Select, ETriggerEvent::Started, this, &APlayerMain::Input_Select);
 
 				SetPawnControlDefaults();
 				SetPlayerInputMode();
@@ -94,7 +94,7 @@ void APlayerMain::SetPawnControlDefaults()
 
 void APlayerMain::SetPlayerInputMode()
 {
-	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	if (AControllerMain* PlayerController = Cast<AControllerMain>(GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -121,7 +121,7 @@ void APlayerMain::AddInputMapping(const UInputMappingContext* InputMappingContex
 {
 	if (InputMappingContext != nullptr)
 	{
-		if (const APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+		if (const AControllerMain* PlayerController = Cast<AControllerMain>(GetController()))
 		{
 			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 			{
@@ -138,7 +138,7 @@ void APlayerMain::RemoveInputMapping(const UInputMappingContext* InputMappingCon
 {
 	if (InputMappingContext != nullptr)
 	{
-		if (const APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+		if (const AControllerMain* PlayerController = Cast<AControllerMain>(GetController()))
 		{
 			if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 			{

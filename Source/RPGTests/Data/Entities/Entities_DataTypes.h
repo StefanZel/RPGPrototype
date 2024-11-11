@@ -21,3 +21,17 @@ enum class EEntities_Sizes
 	FourLegsSmall,
 	FourLegsLarge
 };
+
+USTRUCT()
+struct FEntitiesSelection
+{
+	GENERATED_BODY();
+
+public:
+	FEntitiesSelection() : Ally(nullptr) {}
+	FEntitiesSelection(AActor* AllySelection) : Ally(AllySelection) {}
+
+	UPROPERTY()
+	AActor* Ally;
+
+};

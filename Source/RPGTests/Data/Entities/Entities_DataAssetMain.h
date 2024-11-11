@@ -30,6 +30,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	EEntities_Sizes EntitySize;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
+	float DefaultSpacing;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Selection)
 	TSoftObjectPtr<UMaterialInstance> HighlightMaterial;
 	

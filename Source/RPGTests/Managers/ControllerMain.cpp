@@ -6,11 +6,13 @@
 #include "RPGTests/Component/Entities_Component.h"
 #include "RPGTests/Component/Entities_DecalComponent.h"
 #include "DrawDebugHelpers.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 
 AControllerMain::AControllerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	HitSelectable = nullptr;
+
 }
 
 void AControllerMain::BeginPlay()
@@ -46,7 +48,7 @@ void AControllerMain::GetMousePositionOnTerrain(FVector& TerrainPosition) const
 	{
 		FHitResult Hit;
 
-		if (GetWorld()->LineTraceSingleByChannel(Hit, WorldLocation, WorldLocation + (WorldDirection + 10000.f), TRACE_CHANNEL_TERRAIN))
+		if (GetWorld()->LineTraceSingleByChannel(Hit, WorldLocation, WorldLocation + (WorldDirection * 10000.f), TRACE_CHANNEL_TERRAIN))
 		{
 			if (Hit.bBlockingHit)
 			{
@@ -59,6 +61,20 @@ void AControllerMain::GetMousePositionOnTerrain(FVector& TerrainPosition) const
 void AControllerMain::Select()
 {
 	// TODO Ally, Enemy, and Resource selection
+	/*if (GetWorld())
+	{
+		FVector StartLocation = FVector::ZeroVector;
+		GetMousePositionOnTerrain(StartLocation);
+		SelectStartWorldLocation = StartLocation;
+
+		SelectStartViewportLocation = UWidgetLayoutLibrary::GetMousePositionOnViewport(GetWorld());
+
+		float X, Y;
+		GetMousePosition(X, Y);
+		SelectStartScreenLocation = FVector2D(X, Y);
+	}*/
+
+
 	ClearHitSelectable();
 
 	HitSelectable = GetHitSelectable();
@@ -67,8 +83,8 @@ void AControllerMain::Select()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Selected Actor is %s"), *HitSelectable->GetName());
 	}
-	//HandleSelected(true);
-	//HandleHighlight(true);
+	HandleSelected(true);
+	HandleHighlight(true);
 }
 
 AActor* AControllerMain::GetHitSelectable() const
@@ -79,12 +95,11 @@ AActor* AControllerMain::GetHitSelectable() const
 	if (GetWorld())
 	{
 		FHitResult Hit;
-
-		if (GetWorld()->LineTraceSingleByChannel(Hit, WorldLocation, WorldLocation + (WorldDirection + 10000.f), TRACE_CHANNEL_ENTITY))
+		if (GetWorld()->LineTraceSingleByChannel(Hit, WorldLocation, WorldLocation + (WorldDirection * 10000.f), TRACE_CHANNEL_ENTITY))
 		{
 			if (Hit.bBlockingHit && Hit.GetActor() != nullptr)
 			{
-				DrawDebugLine(GetWorld(), WorldLocation, WorldLocation + (WorldDirection + 10000.f), FColor::Green, false, 1.0f, 0, 1.0f);
+				DrawDebugLine(GetWorld(), WorldLocation, WorldLocation + (WorldDirection * 10000.f), FColor::Green, false, 1.0f, 0, 1.0f);
 				return Hit.GetActor();
 			}
 		}
@@ -99,6 +114,8 @@ void AControllerMain::HandleHighlight(const bool bHighlight)
 	{
 		if(UEntities_Component* Entity = UEntities_Component::FindEntityComponent(HitSelectable))
 		{
+			const FEntitiesSelection AllySelection = Entity->CreateSelection(EEntities_AvailableTypes::Ally);
+
 			Entity->Highlight(bHighlight);
 		}
 	}
@@ -110,6 +127,8 @@ void AControllerMain::HandleSelected(const bool bSelect)
 	{
 		if (UEntities_Component* Entity = UEntities_Component::FindEntityComponent(HitSelectable))
 		{
+			const FEntitiesSelection AllySelection = Entity->CreateSelection(EEntities_AvailableTypes::Ally);
+
 			Entity->Select(bSelect);
 		}
 	}
@@ -120,10 +139,15 @@ void AControllerMain::ClearHitSelectable()
 	HandleSelected(false);
 	HandleHighlight(false);
 
-		if(HitSelectable != nullptr)
-		{
-			HitSelectable = nullptr;
-		}
+	/*if (Selection != nullptr)
+	{
+		Selection = nullptr;
+	}*/
+
+	if(HitSelectable != nullptr)
+	{
+		HitSelectable = nullptr;
+	}
 }
 
 

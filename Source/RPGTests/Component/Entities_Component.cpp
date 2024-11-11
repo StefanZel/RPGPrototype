@@ -7,9 +7,23 @@
 UEntities_Component::UEntities_Component(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryComponentTick.bCanEverTick = false;
+	EntityIndex = 0;
+}
 
-	EntityDataAsset = nullptr;
-	EntityData = nullptr;
+void UEntities_Component::Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex)
+{
+	EntityDataAssetID = NewEntityDataAsset;
+	EntityIndex = NewEntityIndex;
+}
+
+FEntitiesSelection UEntities_Component::CreateSelection(const EEntities_AvailableTypes SelectionType)
+{
+	if (SelectionType == EEntities_AvailableTypes::Ally)
+	{
+		AActor* SelectedAlly = GetOwner();
+		return FEntitiesSelection(SelectedAlly);
+	}
+	return FEntitiesSelection();
 }
 
 
@@ -21,6 +35,7 @@ void UEntities_Component::Highlight(const bool bHighlight)
 	}
 
 	TArray<UMeshComponent*> Components;
+	GetOwner()->GetComponents<UMeshComponent>(Components);
 	for (int i = 0 ; Components.Num() > i; i++)
 	{
 		if (bHighlight)
@@ -49,29 +64,21 @@ void UEntities_Component::Select(const bool bSelect)
 
 UMaterialInstance* UEntities_Component::GetHighlightMaterial()
 {
-	/*if (const UEntities_DataAssetMain* Data = GetData())
+	if (const UEntities_DataAssetMain* Data = GetData())
 	{
 		return Data->HighlightMaterial.LoadSynchronous();
-	}*/
-	if (EntityData != nullptr)
-	{
-		return EntityData->HighlightMaterial.LoadSynchronous();
 	}
 	return nullptr;
+	
 }
 
 UMaterialInstance* UEntities_Component::GetSelectMaterial()
 {
-	/*if (const UEntities_DataAssetMain* Data = GetData())
+	if (const UEntities_DataAssetMain* Data = GetData())
 	{
 		return Data->SelectedMaterial.LoadSynchronous();
-	}*/
-
-	if (EntityData != nullptr)
-	{
-		return EntityData->SelectedMaterial.LoadSynchronous();
 	}
-
+	
 	return nullptr;
 }
 
@@ -89,29 +96,22 @@ UEntities_DataAssetMain* UEntities_Component::GetData() const
 
 EEntities_AvailableTypes UEntities_Component::GetTypes() const
 {
-	/*if (const UEntities_DataAssetMain* Data = GetData())
+	if (const UEntities_DataAssetMain* Data = GetData())
 	{
 		return Data->EntityType;
-	}*/
-
-	if (EntityData != nullptr)
-	{
-		return EntityData->EntityType;
 	}
+
+
 	return EEntities_AvailableTypes::None;
 }
 
 EEntities_Sizes UEntities_Component::GetSizes() const
 {
-	/*if (const UEntities_DataAssetMain* Data = GetData())
+	if (const UEntities_DataAssetMain* Data = GetData())
 	{
 		return Data->EntitySize;
-	}*/
-	if (EntityData != nullptr)
-	{
-		return EntityData->EntitySize;
 	}
-
+	
 	return EEntities_Sizes::None;
 }
 
@@ -141,6 +141,10 @@ FVector UEntities_Component::GetSizeColl()
 			{
 				CollisionShape = FCollisionShape::MakeBox(BoxComponent->GetScaledBoxExtent());
 			}
+			else
+			{
+				CollisionShape = FCollisionShape::MakeBox(FVector(500.f, 300.f, 200.f));
+			}
 			break;
 		default:
 			break;
@@ -153,8 +157,5 @@ void UEntities_Component::BeginPlay()
 {
 	Super::BeginPlay();
 
-	ensureMsgf(EntityDataAsset, TEXT("Input Data Asset is invalid"));
-
-	EntityData = Cast<UEntities_DataAssetMain>(EntityDataAsset);
 	
 }

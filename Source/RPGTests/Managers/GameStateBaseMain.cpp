@@ -45,8 +45,12 @@ void AGameStateBaseMain::BeginPlay()
 {
 	Super::BeginPlay();
 
-	CallOrRegisterPhase_OnGamePhaseLoadGameData(FOnGamePhaseLoadGameDataDelegate::FDelegate::CreateUObject(this, &ThisClass::OnGameDataLoaded), WaitGameDataTaskId, FString("State - WaitForGameData"));
-	CallOrRegisterPhase_OnGamePhaseGameplay(FOnGamePhaseGameplayDelegate::FDelegate::CreateUObject(this, &ThisClass::OnGameplay), GameplayTaskId, FString("State - Gameplay"));
+	CallOrRegisterPhase_OnGamePhaseLoadGameData(FOnGamePhaseLoadGameDataDelegate::FDelegate::CreateUObject(this, &ThisClass::OnGameDataLoaded), 
+		WaitGameDataTaskId, 
+		FString("State - WaitForGameData"));
+	CallOrRegisterPhase_OnGamePhaseGameplay(FOnGamePhaseGameplayDelegate::FDelegate::CreateUObject(this, &ThisClass::OnGameplay), 
+		GameplayTaskId, 
+		FString("State - Gameplay"));
 
 	StartGamePhaseTimer();
 }
