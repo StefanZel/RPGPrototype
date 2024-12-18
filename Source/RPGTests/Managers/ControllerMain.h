@@ -59,4 +59,10 @@ private:
 
 	UPROPERTY()
 	AActor* HitSelectable;
+
+	UPROPERTY()
+	AActor* AllySelected;
+
+	UPROPERTY()
+	AActor* EnemySelected;
 };

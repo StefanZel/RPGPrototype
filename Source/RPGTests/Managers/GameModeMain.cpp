@@ -6,6 +6,7 @@
 #include "RPGTests/Data/AStaticGameData.h"
 #include "RPGTests/Data/GameMode/GameMode_BaseAsset.h"
 #include "Engine/AssetManager.h"
+#include "Engine/World.h"
 #include "PlayerStartBase.h"
 #include "EngineUtils.h"
 #include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
@@ -14,6 +15,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "RPGTests/Component/Entities_Component.h"
 #include "RPGTests/Component/Entities_DecalComponent.h"
+#include "RPGTests/Data/Ai/Ai_DataAssetMain.h"
+#include "RPGTests/Ai/Entities_AiControllerMain.h"
 #include "GameFramework/Controller.h"
 
 
@@ -124,18 +127,48 @@ void AGameModeMain::OnGameDataLoaded()
 			if(EntityDataAsset.Num()>0)
 			{
 				const TArray<FName> Bundles;
-				const FStreamableDelegate DataLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnEntityDataLoaded);
+				const FStreamableDelegate DataLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnEntityDataLoaded, EntityDataAsset);
 				AssetManager->LoadPrimaryAssets(EntityDataAsset, Bundles, DataLoadedDelegate);
 			}
 		}
 	}
 }
 
-void AGameModeMain::OnEntityDataLoaded()
+void AGameModeMain::OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
+{
+
+	if (UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
+	{
+		TArray<FPrimaryAssetId> AiDataAsset;
+		for (int i = 0; i < EntityDataAsset.Num(); i++)
+		{
+			if (const UEntities_DataAssetMain* EntityData = Cast<UEntities_DataAssetMain>(AssetManager->GetPrimaryAssetObject(EntityDataAsset[i])))
+			{
+				if (EntityDataAsset[i].IsValid())
+				{
+					AiDataAsset.Add(EntityData->AiData);
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("[%s] Ai data not Assigned %s"), *GetClass()->GetName(), *EntityData->Name.ToString());
+				}
+			}
+		}
+
+		if (AiDataAsset.Num() > 0)
+		{
+			const TArray<FName> Bundles;
+			const FStreamableDelegate DataLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnAllDataLoaded);
+			AssetManager->LoadPrimaryAssets(AiDataAsset, Bundles, DataLoadedDelegate);
+		}
+	}
+}
+
+void AGameModeMain::OnAllDataLoaded()
 {
 
 	CreateEntities();
-	
+
 	if (AGameStateBaseMain* DefGameState = Cast<AGameStateBaseMain>(GameState))
 	{
 		if (UGameMode_BaseAsset* GameData = GetGameData())
@@ -222,6 +255,7 @@ void AGameModeMain::CreateEntities()
 							// TODO: Add components and such
 							CreateEntityComponent(NewActor, CurrentGameData->Entities[i], i);
 
+							AssignAiController(NewActor, EntityData);
 
 							AllEntities.Add(NewActor);
 						}
@@ -248,6 +282,39 @@ void AGameModeMain::CreateEntityComponent(AActor* Entity, const FPrimaryAssetId&
 	{
 		Entity->AddInstanceComponent(DecalComponent);
 		DecalComponent->RegisterComponent();
+	}
+}
+
+void AGameModeMain::AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityData)
+{
+	if (Entity != nullptr && EntityData != nullptr && EntityData->AiData.IsValid())
+	{
+		if (const UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
+		{
+			if (const UAi_DataAssetMain* AiData = Cast<UAi_DataAssetMain>(AssetManager->GetPrimaryAssetObject(EntityData->AiData)))
+			{
+				if (AiData->AIControllerClass.LoadSynchronous())
+				{
+					FActorSpawnParameters SpawnParams;
+					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					SpawnParams.Instigator = MainController->GetPawn();
+					SpawnParams.Owner = Entity;
+
+					if (AEntities_AiControllerMain* AiController = GetWorld()->SpawnActor<AEntities_AiControllerMain>(
+						AiData->AIControllerClass.LoadSynchronous(), FTransform::Identity, SpawnParams))
+					{
+						if (APawn* EntityPawn = Cast<APawn>(Entity))
+						{
+
+
+							AiController->SetAiData(EntityData->AiData);
+							AiController->Possess(EntityPawn);
+						}
+					}
+				}
+			
+			}
+		}
 	}
 }
 

@@ -12,6 +12,8 @@
 AControllerMain::AControllerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	HitSelectable = nullptr;
+	AllySelected = nullptr;
+	EnemySelected = nullptr;
 
 }
 
@@ -60,19 +62,7 @@ void AControllerMain::GetMousePositionOnTerrain(FVector& TerrainPosition) const
 
 void AControllerMain::Select()
 {
-	// TODO Ally, Enemy, and Resource selection
-	/*if (GetWorld())
-	{
-		FVector StartLocation = FVector::ZeroVector;
-		GetMousePositionOnTerrain(StartLocation);
-		SelectStartWorldLocation = StartLocation;
-
-		SelectStartViewportLocation = UWidgetLayoutLibrary::GetMousePositionOnViewport(GetWorld());
-
-		float X, Y;
-		GetMousePosition(X, Y);
-		SelectStartScreenLocation = FVector2D(X, Y);
-	}*/
+	
 
 
 	ClearHitSelectable();

@@ -31,10 +31,12 @@ protected:
 	void HandleGameDataAssignment();
 	void OnGameDataAssigned();
 	void OnGameDataLoaded();
-	void OnEntityDataLoaded();
+	void OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset);
+	void OnAllDataLoaded();
 	void GenerateEntityLocations(const UGameMode_BaseAsset* GameData);
 	void CreateEntities();
 	void CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset, const int32 EntityIndex);
+	void AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityData);
 
 	UGameMode_BaseAsset* GetGameData();
 

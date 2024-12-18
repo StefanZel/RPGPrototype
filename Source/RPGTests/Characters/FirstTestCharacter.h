@@ -4,10 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "RPGTests/Interfaces/Entities_Interface.h"
+#include "Perception/AIPerceptionStimuliSourceComponent.h"
 #include "FirstTestCharacter.generated.h"
 
+
 UCLASS()
-class RPGTESTS_API AFirstTestCharacter : public ACharacter
+class RPGTESTS_API AFirstTestCharacter : public ACharacter, public IEntities_Interface
 {
 	GENERATED_BODY()
 
@@ -15,12 +18,19 @@ public:
 
 	AFirstTestCharacter(const FObjectInitializer& ObjectInitializer);
 
+	virtual void Tick(float DeltaTime) override;
+
 protected:
 
 	virtual void BeginPlay() override;
+	virtual void CreatePerceptionStimuliSourceComponent();
 
-public:
+private:
 
-	virtual void Tick(float DeltaTime) override;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess=true))
+	UAIPerceptionStimuliSourceComponent* StimuliSourceComponent;
+
+
+
 
 };
