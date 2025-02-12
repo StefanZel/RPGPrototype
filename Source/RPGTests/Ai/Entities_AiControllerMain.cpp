@@ -7,7 +7,7 @@
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "RPGTests/Interfaces/Entities_Interface.h"
-//#include "Runtime/AIModule/Classes/BehaviorTree/BlackboardComponent.h"
+
 
 AEntities_AiControllerMain::AEntities_AiControllerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -27,7 +27,7 @@ void AEntities_AiControllerMain::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
-
+	InitAiOnGameplay();
 }
 
 void AEntities_AiControllerMain::InitAiOnGameplay()

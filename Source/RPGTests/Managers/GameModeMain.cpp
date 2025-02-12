@@ -9,7 +9,6 @@
 #include "Engine/World.h"
 #include "PlayerStartBase.h"
 #include "EngineUtils.h"
-#include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
 #include "ControllerMain.h"
 #include "SettingsMain.h"
 #include "Kismet/GameplayStatics.h"
@@ -17,6 +16,7 @@
 #include "RPGTests/Component/Entities_DecalComponent.h"
 #include "RPGTests/Data/Ai/Ai_DataAssetMain.h"
 #include "RPGTests/Ai/Entities_AiControllerMain.h"
+#include "RPGTests/Ai/Entities_AiControllerCommand.h"
 #include "GameFramework/Controller.h"
 
 
@@ -166,7 +166,7 @@ void AGameModeMain::OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
 
 void AGameModeMain::OnAllDataLoaded()
 {
-
+	// @TODO: Bind this function to different delegate.
 	CreateEntities();
 
 	if (AGameStateBaseMain* DefGameState = Cast<AGameStateBaseMain>(GameState))
@@ -285,13 +285,13 @@ void AGameModeMain::CreateEntityComponent(AActor* Entity, const FPrimaryAssetId&
 	}
 }
 
-void AGameModeMain::AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityData)
+void AGameModeMain::AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityDatas)
 {
-	if (Entity != nullptr && EntityData != nullptr && EntityData->AiData.IsValid())
+	if (Entity != nullptr && EntityDatas != nullptr && EntityDatas->AiData.IsValid())
 	{
 		if (const UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
 		{
-			if (const UAi_DataAssetMain* AiData = Cast<UAi_DataAssetMain>(AssetManager->GetPrimaryAssetObject(EntityData->AiData)))
+			if (const UAi_DataAssetMain* AiData = Cast<UAi_DataAssetMain>(AssetManager->GetPrimaryAssetObject(EntityDatas->AiData)))
 			{
 				if (AiData->AIControllerClass.LoadSynchronous())
 				{
@@ -300,14 +300,14 @@ void AGameModeMain::AssignAiController(AActor* Entity, const UEntities_DataAsset
 					SpawnParams.Instigator = MainController->GetPawn();
 					SpawnParams.Owner = Entity;
 
-					if (AEntities_AiControllerMain* AiController = GetWorld()->SpawnActor<AEntities_AiControllerMain>(
+					if (AEntities_AiControllerCommand* AiController = GetWorld()->SpawnActor<AEntities_AiControllerCommand>(
 						AiData->AIControllerClass.LoadSynchronous(), FTransform::Identity, SpawnParams))
 					{
 						if (APawn* EntityPawn = Cast<APawn>(Entity))
 						{
 
 
-							AiController->SetAiData(EntityData->AiData);
+							AiController->SetAiData(EntityDatas->AiData);
 							AiController->Possess(EntityPawn);
 						}
 					}

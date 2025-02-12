@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
+#include "EnhancedInputComponent.h"
 #include "PlayerInputDataAsset.generated.h"
 
 class UInputMappingContext;
@@ -76,5 +77,44 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mapping Context|Default")
 	UInputAction* Select;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mapping Context|Default")
+	UInputAction* Command;
 
 };
+
+namespace CommandInputActions
+{
+	template<class T, class FuncType>
+	void Bind_StartTriggerComplete(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType StartFunc, FuncType TriggerFunc, FuncType CompleteFunc)
+	{
+		if (StartFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Started, Obj, StartFunc);
+		}
+
+		if (TriggerFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Triggered, Obj, TriggerFunc);
+		}
+
+		if (CompleteFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Completed, Obj, CompleteFunc);
+		}
+	}
+
+	template<class T, class FuncType>
+	void Bind_TriggerComplete(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType TriggerFunc, FuncType CompleteFunc)
+	{
+
+		if (TriggerFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Triggered, Obj, TriggerFunc);
+		}
+
+		if (CompleteFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Completed, Obj, CompleteFunc);
+		}
+	}
+}

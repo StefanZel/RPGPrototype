@@ -8,7 +8,9 @@
 #include "Materials/MaterialInterface.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
+#include "RPGTests/Commands/CommandBase.h"
 #include "Entities_Component.generated.h"
+
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnSelectedChangeDelegate, const bool);
 
@@ -46,6 +48,20 @@ protected:
 
 	UPROPERTY()
 	FPrimaryAssetId EntityDataAssetID;
+
+	/** Command System **/
+public:
+	bool AssignedCommand(const FGuid Id);
+	bool HasCompletedCommand(const FGuid Id);
+    bool HasActiveCommandFor();
+
+protected:
+	UPROPERTY()
+	TArray<UCommandBase*> Commands;
+
+	UPROPERTY()
+	TArray<UCommandBase*> CommandHistory;
+
 
 
 };

@@ -8,7 +8,7 @@
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)
-class RPGTESTS_API UEntities_Interface : public UInterface
+class UEntities_Interface : public UInterface
 {
 	GENERATED_BODY()
 };

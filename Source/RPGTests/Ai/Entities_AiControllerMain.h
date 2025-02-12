@@ -28,7 +28,7 @@ protected:
 
 	/* Ai Data */
 public:
-	void SetAiData(const FPrimaryAssetId& InAiDataAssetId) { AiDataAssetId = InAiDataAssetId; }
+	virtual void SetAiData(const FPrimaryAssetId& InAiDataAssetId) { AiDataAssetId = InAiDataAssetId; }
 	UAi_DataAssetMain* GetAiData() const;
 
 protected:

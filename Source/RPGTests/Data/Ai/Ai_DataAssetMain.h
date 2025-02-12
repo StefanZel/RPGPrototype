@@ -7,7 +7,7 @@
 #include "Ai_DataAssetMain.generated.h"
 
 class UBehaviorTree;
-class AEntities_AiControllerMain;
+class AEntities_AiControllerCommand;
 /**
  * 
  */
@@ -53,6 +53,8 @@ public:
 	TSoftObjectPtr<UBehaviorTree> BehaviorTreeAsset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Behavior)
-	TSoftClassPtr<AEntities_AiControllerMain> AIControllerClass;
+	TSoftClassPtr<AEntities_AiControllerCommand> AIControllerClass;
+
+
 
 };

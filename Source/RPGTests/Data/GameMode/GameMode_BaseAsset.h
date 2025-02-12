@@ -43,5 +43,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration, meta=(AllowedTypes="Entity"))
 	TArray<FPrimaryAssetId> Entities;
 
+
+
 	// TODO: Vector arrays of spawn points for each entity type
 };

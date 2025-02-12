@@ -1,7 +1,8 @@
 ﻿
 #include "Entities_Component.h"
-#include <Engine/AssetManager.h>
-#include <Components/BoxComponent.h>
+#include "Engine/AssetManager.h"
+#include "Components/BoxComponent.h"
+#include "RPGTests/Ai/Entities_AiControllerCommand.h"
 
 
 UEntities_Component::UEntities_Component(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -158,4 +159,45 @@ void UEntities_Component::BeginPlay()
 	Super::BeginPlay();
 
 	
+}
+
+
+bool UEntities_Component::AssignedCommand(const FGuid Id)
+{
+	for (int i = 0; i < Commands.Num(); ++i)
+	{
+		if (Commands[i]->GetId() == Id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UEntities_Component::HasCompletedCommand(const FGuid Id)
+{
+	for (int i = 0; i < CommandHistory.Num(); ++i)
+	{
+		if (CommandHistory[i]->GetId() == Id)
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+bool UEntities_Component::HasActiveCommandFor()
+{
+	AActor* CurrentOwner = GetOwner();
+	if (const APawn* EntityPawn = Cast<APawn>(CurrentOwner))
+	{
+		if (const AEntities_AiControllerCommand* AiController = Cast<AEntities_AiControllerCommand>(EntityPawn->GetController()))
+		{
+			if (AiController->HasActiveCommand())
+			{
+				return true;
+			}
+		}
+	}
+	return false;
 }

@@ -67,6 +67,8 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 				EnhancedInputComponent->BindAction(InputData->Rotate, ETriggerEvent::Triggered, this, &APlayerMain::Input_Rotate);
 				EnhancedInputComponent->BindAction(InputData->Select, ETriggerEvent::Started, this, &APlayerMain::Input_Select);
 
+				CommandInputActions::Bind_StartTriggerComplete(EnhancedInputComponent, InputData->Command, this, &APlayerMain::Input_Command, &APlayerMain::Input_CommandHold, &APlayerMain::Input_CommandEnd);
+
 				SetPawnControlDefaults();
 				SetPlayerInputMode();
 				SetInputDefault();
@@ -222,6 +224,39 @@ void APlayerMain::Input_Select(const FInputActionValue& InputActionValue)
 		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
 		{
 			Selectable->Select();
+		}
+	}
+}
+
+void APlayerMain::Input_Command(const FInputActionValue& InputActionValue)
+{
+	if (GetController())
+	{
+		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
+		{
+			Selectable->Command();
+		}
+	}
+}
+
+void APlayerMain::Input_CommandHold(const FInputActionValue& InputActionValue)
+{
+	if (GetController())
+	{
+		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
+		{
+			Selectable->CommandHold();
+		}
+	}
+}
+
+void APlayerMain::Input_CommandEnd(const FInputActionValue& InputActionValue)
+{
+	if (GetController())
+	{
+		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
+		{
+			Selectable->CommandEnd();
 		}
 	}
 }

@@ -24,6 +24,17 @@ class RPGTESTS_API ISelectable
 public:
 	UFUNCTION()
 	virtual void Select() = 0;
+
+	UFUNCTION()
+	virtual void Command() = 0;
+
+	UFUNCTION()
+	virtual void CommandHold() = 0;
+
+	UFUNCTION()
+	virtual void CommandEnd() = 0;
+
+
 	
 
 };

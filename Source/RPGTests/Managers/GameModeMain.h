@@ -1,11 +1,12 @@
 
-
 #pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "ControllerMain.h"
+#include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
 #include "GameModeMain.generated.h"
+
 
 class UGameMode_BaseAsset;
 /**
@@ -36,7 +37,7 @@ protected:
 	void GenerateEntityLocations(const UGameMode_BaseAsset* GameData);
 	void CreateEntities();
 	void CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset, const int32 EntityIndex);
-	void AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityData);
+	void AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityDatas);
 
 	UGameMode_BaseAsset* GetGameData();
 

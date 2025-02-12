@@ -7,6 +7,7 @@
 #include "Engine/DataAsset.h"
 #include "Entities_DataAssetMain.generated.h"
 
+class UCommandBase;
 /**
  * 
  */
@@ -30,7 +31,7 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	EEntities_Sizes EntitySize;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration, meta=(AllowedTypes=AiData))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration /*, meta=(AllowedTypes="AiData")*/)
 	FPrimaryAssetId AiData;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
@@ -39,9 +40,15 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	FText Name;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
+	float MaxSpeed;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Selection)
 	TSoftObjectPtr<UMaterialInstance> HighlightMaterial;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Selection)
 	TSoftObjectPtr<UMaterialInstance> SelectedMaterial;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Command)
+	TMap<EEntities_CommandTypes, TSoftClassPtr<UCommandBase>> Commands;
 };
