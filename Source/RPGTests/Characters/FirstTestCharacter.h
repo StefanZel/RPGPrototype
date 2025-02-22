@@ -7,6 +7,7 @@
 #include "RPGTests/Interfaces/Entities_Interface.h"
 #include "RPGTests/Data/Entities/Entities_DataTypes.h"
 #include "Perception/AIPerceptionStimuliSourceComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "FirstTestCharacter.generated.h"
 
 

@@ -34,6 +34,7 @@ protected:
 	void OnGameDataLoaded();
 	void OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset);
 	void OnAllDataLoaded();
+	FVector EntitySpawnStartLocation();
 	void GenerateEntityLocations(const UGameMode_BaseAsset* GameData);
 	void CreateEntities();
 	void CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset, const int32 EntityIndex);

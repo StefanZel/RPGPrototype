@@ -23,12 +23,12 @@ void AEntities_AiControllerMain::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AEntities_AiControllerMain::OnPossess(APawn* InPawn)
+/*void AEntities_AiControllerMain::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
 
 	InitAiOnGameplay();
-}
+}*/
 
 void AEntities_AiControllerMain::InitAiOnGameplay()
 {
@@ -84,6 +84,7 @@ void AEntities_AiControllerMain::InitSightPerception()
 	if (UAi_DataAssetMain* AiData = GetAiData())
 	{
 		PerceptionComponent = NewObject<UAIPerceptionComponent>(this, TEXT("AIPerceptionComponent"));
+		PerceptionComponent->RegisterComponent();
 		SightConfig = NewObject<UAISenseConfig_Sight>(this, TEXT("SightConfig"));
 
 		if (SightConfig && GetPerceptionComponent())

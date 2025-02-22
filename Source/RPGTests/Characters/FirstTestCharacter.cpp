@@ -13,17 +13,25 @@ AFirstTestCharacter::AFirstTestCharacter(const FObjectInitializer& ObjectInitial
 {
 	PrimaryActorTick.bCanEverTick = true;
 
+	//GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+	//GetCapsuleComponent()->SetRelativeLocation(FVector(0.f, 0.f, -96.f));
+
+
 	CharacterMoveComponent = GetCharacterMovement();
 
 	if (CharacterMoveComponent)
 	{
+		CharacterMoveComponent->SetMovementMode(EMovementMode::MOVE_Walking);
 		CharacterMoveComponent->bOrientRotationToMovement = true;
 		CharacterMoveComponent->RotationRate = FRotator(0.f, 640.f, 0.f);
 		CharacterMoveComponent->bConstrainToPlane = true;
 		CharacterMoveComponent->bSnapToPlaneAtStart = true;
+		CharacterMoveComponent->bUseFlatBaseForFloorChecks = true;
+		CharacterMoveComponent->GravityScale = 1.f;
 
 		MaxMovementSpeed = GetMaxSpeed();
 	}
+	//GetMesh()->SetRelativeLocation(FVector(0.f, 0.f, -96.f));
 }
 
 void AFirstTestCharacter::BeginPlay()

@@ -179,12 +179,26 @@ void AGameModeMain::OnAllDataLoaded()
 	}
 }
 
+FVector AGameModeMain::EntitySpawnStartLocation()
+{
+	for (TActorIterator<APlayerStartBase> ActorItr(GetWorld()); ActorItr; ++ActorItr)
+	{
+		APlayerStartBase* PlayerStart = *ActorItr;
+		if (PlayerStart)
+		{
+			return PlayerStart->GetActorLocation();
+		}
+
+	}
+	return FVector();
+}
+
 void AGameModeMain::GenerateEntityLocations(const UGameMode_BaseAsset* GameData)
 {
 	EntitySpawnLocations.Empty();
 	TArray<float> CurrentEntitySpawnSpacing;
 	CurrentEntitySpawnSpacing.Init(0.f, 2);
-	const FVector StartEntitySpawnLocation = PlayerStartLocation;
+	//const FVector StartEntitySpawnLocation = EntitySpawnStartLocation();
 
 	if (const UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
 	{
@@ -197,7 +211,7 @@ void AGameModeMain::GenerateEntityLocations(const UGameMode_BaseAsset* GameData)
 
 			if(const UEntities_DataAssetMain* EntityData = Cast<UEntities_DataAssetMain>(AssetManager->GetPrimaryAssetObject(GameData->Entities[EntityIndex])))
 			{
-				FVector EntityLocation = StartEntitySpawnLocation;
+				FVector EntityLocation = EntitySpawnStartLocation();
 				if(EntityIndex != 0)
 				{
 				
@@ -206,7 +220,7 @@ void AGameModeMain::GenerateEntityLocations(const UGameMode_BaseAsset* GameData)
 					if(CurrentEntitySpawnSpacing.IsValidIndex(OffsetIndex))
 					{
 						CurrentEntitySpawnSpacing[OffsetIndex] += OffsetIndex == 0 ? EntityData->DefaultSpacing: -EntityData->DefaultSpacing;
-						EntityLocation.Y = CurrentEntitySpawnSpacing[OffsetIndex];
+						EntityLocation.Y += CurrentEntitySpawnSpacing[OffsetIndex];
 					}
 				}
 				if(MainController)
@@ -296,9 +310,9 @@ void AGameModeMain::AssignAiController(AActor* Entity, const UEntities_DataAsset
 				if (AiData->AIControllerClass.LoadSynchronous())
 				{
 					FActorSpawnParameters SpawnParams;
-					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+					SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 					SpawnParams.Instigator = MainController->GetPawn();
-					SpawnParams.Owner = Entity;
+					//SpawnParams.Owner = Entity;
 
 					if (AEntities_AiControllerCommand* AiController = GetWorld()->SpawnActor<AEntities_AiControllerCommand>(
 						AiData->AIControllerClass.LoadSynchronous(), FTransform::Identity, SpawnParams))

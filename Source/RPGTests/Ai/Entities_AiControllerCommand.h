@@ -17,8 +17,10 @@ class RPGTESTS_API AEntities_AiControllerCommand : public AEntities_AiController
 public:
 	AEntities_AiControllerCommand(const FObjectInitializer& ObjectInitializer);
 	virtual void Tick(float DeltaTime) override;
+	virtual void OnPossess(APawn* InPawn) override;
+	virtual void InitAiOnGameplay() override;
 	bool HasActiveCommand() const { return ActiveCommand != nullptr; }
-	void ExecuteMovement(const FVector Destination);
+	void ExecuteMovement(const FVector& Destination);
 
 	UPROPERTY()
 	FVector CommandDestination;

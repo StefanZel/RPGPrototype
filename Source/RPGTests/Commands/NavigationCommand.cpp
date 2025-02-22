@@ -60,7 +60,7 @@ void UNavigationCommand::ExecuteNavigation()
 			{
 				if (GEngine != nullptr)
 				{
-					GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Yellow, FString::Printf(TEXT("Command Target position is: X=[%f] Y=[%f] Z=[%f]"), Data.GetLocation().X, Data.GetLocation().Y, Data.GetLocation().Z));
+					GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Yellow, FString::Printf(TEXT("Command Target position is: X=[%f] Y=[%f] Z=[%f] Entity=[%s]"), Data.GetLocation().X, Data.GetLocation().Y, Data.GetLocation().Z, *EntityPawn->GetName()));
 				}
 				AiController->ExecuteMovement(Data.GetLocation());
 			}
