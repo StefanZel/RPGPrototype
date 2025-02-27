@@ -10,7 +10,11 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "FirstTestCharacter.generated.h"
 
+/*
+	For some insane reason, if a blueprint is made using this class its root component will be corrupted.
+	This will cause all other components to be detached from Mesh and Capsule, resulting in unexpected behaviour.
 
+*/
 
 UCLASS()
 class RPGTESTS_API AFirstTestCharacter : public ACharacter, public IEntities_Interface
@@ -23,6 +27,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetActorEyesViewPoint(FVector& OutLocation, FRotator& OutRotation) const override;
+	virtual void PostInitializeComponents() override;
 
 	float GetMaxSpeed();
 

@@ -35,15 +35,12 @@ enum class EEntities_CommandStatus : uint8
 {
 	None,
 	Active,
-	Queued,
 	Updating,
 	Undo,
 	Redo,
 	Completed,
 	Failed,
 	Preview
-
-	// Might add queue for some commands...
 
 };
 
@@ -157,7 +154,6 @@ public:
 
 };
 
-// @TODO: There is a chance that i will try a different approach without this struct. Remember to delete it.
 USTRUCT(BlueprintType)
 struct FEntities_CommandData
 {
@@ -167,7 +163,6 @@ public:
 	FEntities_CommandData(): 
 		Id(FGuid::NewGuid()),
 		CommandType(EEntities_CommandTypes::None),
-		ShouldQueue(false),
 		CommandStatus(EEntities_CommandStatus::None),
 		TargetTransform(FTransform::Identity),
 		SourceTransform(FTransform::Identity),
@@ -187,10 +182,6 @@ public:
 
 	UPROPERTY()
 	EEntities_CommandTypes CommandType;
-
-	// @TODO: Still not sure if i should make queue for commands. Don't forget to remove this later
-	UPROPERTY()
-	uint8 ShouldQueue : 1;
 
 	UPROPERTY()
 	EEntities_CommandStatus CommandStatus;
@@ -212,18 +203,4 @@ public:
 
 	UPROPERTY()
 	FEntities_Navigation Navigation;
-};
-
-USTRUCT()
-struct FEntitiesSelection
-{
-	GENERATED_BODY();
-
-public:
-	FEntitiesSelection() : Ally(nullptr) {}
-	FEntitiesSelection(AActor* AllySelection) : Ally(AllySelection) {}
-
-	UPROPERTY()
-	AActor* Ally;
-
 };

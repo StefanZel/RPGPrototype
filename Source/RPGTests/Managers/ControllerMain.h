@@ -9,7 +9,6 @@
 class APlayerMain;
 class UCommandData;
 class UCommandBase;
-struct FEntitiesSelection;
 
 DECLARE_MULTICAST_DELEGATE(FOnMapDataLoadedDelegate);
 
@@ -60,19 +59,8 @@ protected:
 	UPROPERTY()
 	FVector CommandTargetLocation;
 
-	void Enqueue(UCommandBase* Command);
-	void Dequeue();
 	void CommandHistory(const FGuid Id, const bool Success);
 
-	UPROPERTY()
-	TArray<UCommandBase*> Queue;
-
-	UPROPERTY()
-	TArray<UCommandBase*> QueueHistory;
-
-
-	UPROPERTY()
-	FEntitiesSelection Selection;
 
 	AActor* GetHitSelectable() const;
 	void HandleHighlight(const bool bHighlight);

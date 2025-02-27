@@ -17,7 +17,7 @@ void UEntities_Component::Initialize(const FPrimaryAssetId& NewEntityDataAsset, 
 	EntityIndex = NewEntityIndex;
 }
 
-FEntitiesSelection UEntities_Component::CreateSelection(const EEntities_AvailableTypes SelectionType)
+/*FEntitiesSelection UEntities_Component::CreateSelection(const EEntities_AvailableTypes SelectionType)
 {
 	if (SelectionType == EEntities_AvailableTypes::Ally)
 	{
@@ -25,7 +25,7 @@ FEntitiesSelection UEntities_Component::CreateSelection(const EEntities_Availabl
 		return FEntitiesSelection(SelectedAlly);
 	}
 	return FEntitiesSelection();
-}
+}*/
 
 
 void UEntities_Component::Highlight(const bool bHighlight)

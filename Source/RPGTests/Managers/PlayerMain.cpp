@@ -61,13 +61,14 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		{
 			if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 			{
-				EnhancedInputComponent->BindAction(InputData->Move, ETriggerEvent::Triggered, this, &APlayerMain::Input_Move);
-				EnhancedInputComponent->BindAction(InputData->Look, ETriggerEvent::Triggered, this, &APlayerMain::Input_Look);
-				EnhancedInputComponent->BindAction(InputData->Zoom, ETriggerEvent::Triggered, this, &APlayerMain::Input_Zoom);
-				EnhancedInputComponent->BindAction(InputData->Rotate, ETriggerEvent::Triggered, this, &APlayerMain::Input_Rotate);
-				EnhancedInputComponent->BindAction(InputData->Select, ETriggerEvent::Started, this, &APlayerMain::Input_Select);
+				
+				InputActions::Bind_Trigger(EnhancedInputComponent, InputData->Move, this, &APlayerMain::Input_Move);
+				InputActions::Bind_Trigger(EnhancedInputComponent, InputData->Look, this, &APlayerMain::Input_Look);
+				InputActions::Bind_Trigger(EnhancedInputComponent, InputData->Zoom, this, &APlayerMain::Input_Zoom);
+				InputActions::Bind_Trigger(EnhancedInputComponent, InputData->Rotate, this, &APlayerMain::Input_Rotate);
+				InputActions::Bind_Start(EnhancedInputComponent, InputData->Select, this, &APlayerMain::Input_Select);
 
-				CommandInputActions::Bind_StartTriggerComplete(EnhancedInputComponent, InputData->Command, this, &APlayerMain::Input_Command, &APlayerMain::Input_CommandHold, &APlayerMain::Input_CommandEnd);
+				InputActions::Bind_StartTriggerComplete(EnhancedInputComponent, InputData->Command, this, &APlayerMain::Input_Command, &APlayerMain::Input_CommandHold, &APlayerMain::Input_CommandEnd);
 
 				SetPawnControlDefaults();
 				SetPlayerInputMode();

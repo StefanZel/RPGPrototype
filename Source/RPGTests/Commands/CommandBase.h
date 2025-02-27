@@ -36,7 +36,6 @@ public:
 
 	// Set
 	virtual void SetSelected(AActor* SelectedActor);
-	void SetQueued() { Data.CommandStatus = EEntities_CommandStatus::Queued; }
 
 
 	UPROPERTY()

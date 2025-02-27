@@ -82,7 +82,7 @@ public:
 
 };
 
-namespace CommandInputActions
+namespace InputActions
 {
 	template<class T, class FuncType>
 	void Bind_StartTriggerComplete(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType StartFunc, FuncType TriggerFunc, FuncType CompleteFunc)
@@ -111,6 +111,36 @@ namespace CommandInputActions
 		{
 			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Triggered, Obj, TriggerFunc);
 		}
+
+		if (CompleteFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Completed, Obj, CompleteFunc);
+		}
+	}
+
+	template<class T, class FuncType>
+	void Bind_Start(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType StartFunc)
+	{
+
+		if (StartFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Started, Obj, StartFunc);
+		}
+	}
+
+	template<class T, class FuncType>
+	void Bind_Trigger(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType TriggerFunc)
+	{
+
+		if (TriggerFunc != nullptr)
+		{
+			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Triggered, Obj, TriggerFunc);
+		}
+	}
+
+	template<class T, class FuncType>
+	void Bind_Completed(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType CompleteFunc)
+	{
 
 		if (CompleteFunc != nullptr)
 		{

@@ -12,13 +12,20 @@
 AFirstTestCharacter::AFirstTestCharacter(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	PrimaryActorTick.bCanEverTick = true;
-
+	
 	//GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
 	//GetCapsuleComponent()->SetRelativeLocation(FVector(0.f, 0.f, -96.f));
-
-
+	
+	//RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComp"));
+	
+	UCapsuleComponent* Capsule = GetCapsuleComponent();
+    	if (Capsule)
+    	{
+        	RootComponent = Capsule; 
+    	}
+	
 	CharacterMoveComponent = GetCharacterMovement();
-
+	
 	if (CharacterMoveComponent)
 	{
 		CharacterMoveComponent->SetMovementMode(EMovementMode::MOVE_Walking);
@@ -38,6 +45,21 @@ void AFirstTestCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+}
+
+void AFirstTestCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	
+	if (!RootComponent)
+	{
+		USceneComponent* SceneLayout = NewObject<USceneComponent>(this, TEXT("SceneLayout"));
+
+		SceneLayout->RegisterComponent();
+		SceneLayout->OnComponentCreated();
+
+		SetRootComponent(SceneLayout);
+	}
 }
 
 void AFirstTestCharacter::CreatePerceptionStimuliSourceComponent()

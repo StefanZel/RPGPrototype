@@ -25,7 +25,7 @@ public:
 	void Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex);
 	UFUNCTION()
 	static UEntities_Component* FindEntityComponent(const AActor* Entity) { return (Entity ? Entity->FindComponentByClass<UEntities_Component>() : nullptr); }
-	virtual FEntitiesSelection CreateSelection(const EEntities_AvailableTypes SelectionType);
+	//virtual FEntitiesSelection CreateSelection(const EEntities_AvailableTypes SelectionType);
 	
 	UPROPERTY()
 	int32 EntityIndex ;

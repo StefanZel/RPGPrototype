@@ -171,6 +171,7 @@ UCommandBase* AControllerMain::CreateCommand(const FEntities_BaseCommandData& Ba
 						FEntities_CommandData CommandData = FEntities_CommandData();
 						UpdateCommandData(BaseCommandData, CommandData);
 						NewCommand->Data = CommandData;
+						NewCommand->SetSelected(HitSelectable);
 
 						return NewCommand;
 					}
@@ -188,7 +189,7 @@ void AControllerMain::UpdateCommandData(const FEntities_BaseCommandData& BaseCom
 
 	CommandData.ApplyBaseData(BaseCommandData);
 
-	CommandData.SourceActor = HitSelectable;
+	//CommandData.SourceActor = HitSelectable;
 
 	// TODO@ Change this after refactoring actor spawning. Don't forget to change GetHitSelectable() to return actor on specific location
 	if (EnemySelected != nullptr)
@@ -205,24 +206,6 @@ void AControllerMain::UpdateCommandData(const FEntities_BaseCommandData& BaseCom
 void AControllerMain::GetCommandNavigationData(FEntities_CommandData& CommandData) const
 {
 	CommandData.Navigation = FEntities_Navigation();
-}
-
-void AControllerMain::Enqueue(UCommandBase* Command)
-{
-	/*if (Command == nullptr) return;
-
-	Queue.Add(Command);
-	Command->SetQueued();*/
-}
-
-void AControllerMain::Dequeue()
-{
-	/*for (int i = 0; i < Queue.Num(); i++)
-	{
-		if (Queue[i] == nullptr) continue;
-
-
-	}*/
 }
 
 void AControllerMain::CommandHistory(const FGuid Id, const bool Success)
@@ -257,8 +240,6 @@ void AControllerMain::HandleHighlight(const bool bHighlight)
 	{
 		if(UEntities_Component* Entity = UEntities_Component::FindEntityComponent(HitSelectable))
 		{
-			const FEntitiesSelection AllySelection = Entity->CreateSelection(EEntities_AvailableTypes::Ally);
-
 			Entity->Highlight(bHighlight);
 		}
 	}
@@ -270,8 +251,6 @@ void AControllerMain::HandleSelected(const bool bSelect)
 	{
 		if (UEntities_Component* Entity = UEntities_Component::FindEntityComponent(HitSelectable))
 		{
-			const FEntitiesSelection AllySelection = Entity->CreateSelection(EEntities_AvailableTypes::Ally);
-
 			Entity->Select(bSelect);
 		}
 	}

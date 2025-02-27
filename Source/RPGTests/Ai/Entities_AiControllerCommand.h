@@ -22,8 +22,7 @@ public:
 	bool HasActiveCommand() const { return ActiveCommand != nullptr; }
 	void ExecuteMovement(const FVector& Destination);
 
-	UPROPERTY()
-	FVector CommandDestination;
+	void SetActiveCommand(UCommandBase* NewActiveCommand) { ActiveCommand = NewActiveCommand; }
 
 protected:
 	virtual void BeginPlay() override;

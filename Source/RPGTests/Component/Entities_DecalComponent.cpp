@@ -10,6 +10,13 @@ UEntities_DecalComponent::UEntities_DecalComponent(const FObjectInitializer& Obj
 
 }
 
+void UEntities_DecalComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	UpdateLocation();
+}
+
 
 void UEntities_DecalComponent::BeginPlay()
 {
@@ -30,9 +37,7 @@ void UEntities_DecalComponent::BeginPlay()
 			DecalSize = FVector(Size.Z, MaxRadius, MaxRadius);
 			SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
 
-			FVector DecalLocation = GetOwner()->GetActorLocation();
-			DecalLocation.Z = 0.f;
-			SetRelativeLocation(DecalLocation);
+			UpdateLocation();
 
 			DecalMaterial = SelectedMaterial;
 			MarkRenderStateDirty();
@@ -51,5 +56,12 @@ void UEntities_DecalComponent::UpdateSelected(const bool bSelected)
 		SetVisibility(bSelected);
 	}
 
+}
+
+void UEntities_DecalComponent::UpdateLocation()
+{
+	FVector DecalLocation = GetOwner()->GetActorLocation();
+	DecalLocation.Z = 0.f;
+	SetRelativeLocation(DecalLocation);
 }
 

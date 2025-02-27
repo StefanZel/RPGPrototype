@@ -14,8 +14,12 @@ class RPGTESTS_API UEntities_DecalComponent : public UDecalComponent
 
 public:
 	UEntities_DecalComponent(const FObjectInitializer& ObjectInitializer);
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 protected:
 	virtual void BeginPlay() override;
 	void UpdateSelected(const bool bSelected);
+	void UpdateLocation();
+
+	
 };

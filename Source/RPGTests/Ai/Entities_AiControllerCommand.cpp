@@ -37,11 +37,6 @@ void AEntities_AiControllerCommand::BeginPlay()
 
 void AEntities_AiControllerCommand::ExecuteMovement(const FVector& Destination)
 {
-	if (GEngine != nullptr)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Yellow, FString::Printf(TEXT("Command Target position is: X=[%f] Y=[%f] Z=[%f] "), Destination.X, Destination.Y, Destination.Z));
-	}
-
 	if (GetPawn()) 
 	{
 		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
@@ -49,7 +44,6 @@ void AEntities_AiControllerCommand::ExecuteMovement(const FVector& Destination)
 		if (NavSystem)
 		{
 			FNavLocation NavLocation;
-			DrawDebugSphere(GetWorld(), Destination, 50.0f, 12, FColor::Red, true);
 
 			if (NavSystem->ProjectPointToNavigation(Destination, NavLocation))
 			{

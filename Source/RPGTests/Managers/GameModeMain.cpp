@@ -1,6 +1,4 @@
 
-
-
 #include "GameModeMain.h"
 #include "GameStateBaseMain.h"
 #include "RPGTests/Data/AStaticGameData.h"
@@ -294,6 +292,7 @@ void AGameModeMain::CreateEntityComponent(AActor* Entity, const FPrimaryAssetId&
 	}
 	if (UEntities_DecalComponent* DecalComponent = NewObject<UEntities_DecalComponent>(Entity, TEXT("DecalComponent")))
 	{
+		//DecalComponent->SetupAttachment(Entity->GetRootComponent());
 		Entity->AddInstanceComponent(DecalComponent);
 		DecalComponent->RegisterComponent();
 	}
