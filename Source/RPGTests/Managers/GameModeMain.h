@@ -5,6 +5,7 @@
 #include "GameFramework/GameModeBase.h"
 #include "ControllerMain.h"
 #include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
+#include "RPGTests/Data/MapInfo/Map_BaseDataAsset.h"
 #include "GameModeMain.generated.h"
 
 
@@ -35,10 +36,18 @@ protected:
 	void OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset);
 	void OnAllDataLoaded();
 	FVector EntitySpawnStartLocation();
+	void GenerateEnemySpawnLocation();
 	void GenerateEntityLocations(const UGameMode_BaseAsset* GameData);
 	void CreateEntities();
 	void CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset, const int32 EntityIndex);
 	void AssignAiController(AActor* Entity, const UEntities_DataAssetMain* EntityDatas);
+	void OnEntityCreationComplete();
+	void CreateEnemies();
+	void OnEnemiesCreated();
+
+	//Map Data
+	void SetMapdata();
+	UMap_BaseDataAsset* CreateMapData();
 
 	UGameMode_BaseAsset* GetGameData();
 
@@ -48,12 +57,17 @@ protected:
 	UPROPERTY()
 	FVector PlayerStartLocation;
 
-
 	UPROPERTY()
 	TArray<AActor*> PlayerEntities;
 
 	UPROPERTY()
 	TArray<FVector> EntitySpawnLocations;
+
+	UPROPERTY()
+	TArray<FVector> EnemySpawnLocations;
+
+	UPROPERTY()
+	TArray<UEntities_DataAssetMain*> EnemiesToSpawn;
 
 	UPROPERTY()
 	AControllerMain* MainController;
@@ -62,5 +76,11 @@ private:
 
 	UPROPERTY()
 	FGuid LoadGameDataTaskId;
+
+	UPROPERTY()
+	FGuid CreateEntitiesTaskId;
+
+	UPROPERTY()
+	FGuid CreateEnemyTaskId;
 	
 };

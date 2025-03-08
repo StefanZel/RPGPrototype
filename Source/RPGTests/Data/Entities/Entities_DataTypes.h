@@ -7,7 +7,8 @@ enum class EEntities_AvailableTypes
 {
 	None,
 	Ally,
-	Enemy,
+	EnemyCommon,
+	EnemyRare,
 	Resource
 };
 

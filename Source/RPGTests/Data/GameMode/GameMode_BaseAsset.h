@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+#include "RPGTests/Data/MapInfo/Map_BaseDataAsset.h"
 #include "GameMode_BaseAsset.generated.h"
 
 /**
@@ -43,7 +44,6 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration, meta=(AllowedTypes="Entity"))
 	TArray<FPrimaryAssetId> Entities;
 
-
-
-	// TODO: Vector arrays of spawn points for each entity type
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
+	UMap_BaseDataAsset* MapData;
 };

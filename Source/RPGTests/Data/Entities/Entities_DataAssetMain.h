@@ -43,6 +43,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	float MaxSpeed;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Spawn)
+	int BaseSpawnWeight;
+
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Selection)
 	TSoftObjectPtr<UMaterialInstance> HighlightMaterial;
 	
