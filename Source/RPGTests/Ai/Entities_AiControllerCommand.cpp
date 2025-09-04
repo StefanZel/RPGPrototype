@@ -35,21 +35,46 @@ void AEntities_AiControllerCommand::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AEntities_AiControllerCommand::ExecuteMovement(const FVector& Destination)
+void AEntities_AiControllerCommand::ExecuteCommand(UCommandBase* Command)
+{
+	if(Command == nullptr) return;
+	
+	if(ActiveCommand != nullptr)
+	{
+		if(ActiveCommand->GetId() == Command->GetId()) return;
+
+		CompleteCurrentCommand(EEntities_CommandStatus::Updating);
+	}
+
+	ActiveCommand = Command;
+	if (ActiveCommand != nullptr)
+	{
+		if(ActiveCommand->Data.HasNavigation)
+		{ 
+			ExecuteMovement();
+		}
+	}
+}
+
+void AEntities_AiControllerCommand::CompleteCurrentCommand(const EEntities_CommandStatus Status)
+{
+
+}
+
+void AEntities_AiControllerCommand::ExecuteMovement()
 {
 	if (GetPawn()) 
 	{
 		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
 
+
 		if (NavSystem)
 		{
 			FNavLocation NavLocation;
 
-			if (NavSystem->ProjectPointToNavigation(Destination, NavLocation))
+			if (NavSystem->ProjectPointToNavigation(ActiveCommand->Data.GetLocation(), NavLocation))
 			{
 				EPathFollowingRequestResult::Type Result = MoveToLocation(NavLocation.Location);
-
-
 
 				if (Result == EPathFollowingRequestResult::Type::Failed)
 				{

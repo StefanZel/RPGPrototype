@@ -22,7 +22,7 @@ class RPGTESTS_API UEntities_Component : public UActorComponent
 public:
 	UEntities_Component(const FObjectInitializer& ObjectInitializer);
 
-	void Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex);
+	virtual void Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex);
 	UFUNCTION()
 	static UEntities_Component* FindEntityComponent(const AActor* Entity) { return (Entity ? Entity->FindComponentByClass<UEntities_Component>() : nullptr); }
 	//virtual FEntitiesSelection CreateSelection(const EEntities_AvailableTypes SelectionType);
@@ -53,7 +53,9 @@ protected:
 public:
 	bool AssignedCommand(const FGuid Id);
 	bool HasCompletedCommand(const FGuid Id);
-    bool HasActiveCommandFor();
+	bool HasActiveCommandFor();
+	void ExecuteNavigationCommand(UCommandBase* Command);
+	void AssignCommand(UCommandBase* Command);
 
 protected:
 	UPROPERTY()

@@ -20,9 +20,10 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void InitAiOnGameplay() override;
 	bool HasActiveCommand() const { return ActiveCommand != nullptr; }
-	void ExecuteMovement(const FVector& Destination);
+	void ExecuteCommand(UCommandBase* Command);
+	void CompleteCurrentCommand(const EEntities_CommandStatus Status);
+	void ExecuteMovement();
 
-	void SetActiveCommand(UCommandBase* NewActiveCommand) { ActiveCommand = NewActiveCommand; }
 
 protected:
 	virtual void BeginPlay() override;

@@ -12,6 +12,19 @@
 class UInputMappingContext;
 class UInputAction;
 
+USTRUCT(BlueprintType)
+struct FAbilityInputData
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UInputAction* AbilityInputAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	int32 AbilityId;
+};
+
 UCLASS()
 class RPGTESTS_API UPlayerInputDataAsset : public UDataAsset
 {
@@ -80,6 +93,8 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mapping Context|Default")
 	UInputAction* Command;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Ability Selection")
+	TArray<FAbilityInputData> AbilityInput;
 };
 
 namespace InputActions

@@ -70,6 +70,17 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 				InputActions::Bind_StartTriggerComplete(EnhancedInputComponent, InputData->Command, this, &APlayerMain::Input_Command, &APlayerMain::Input_CommandHold, &APlayerMain::Input_CommandEnd);
 
+				//Not the best approach in my opinion, might revisit this later
+				for (const FAbilityInputData& AbilitySlot : InputData->AbilityInput)
+				{
+					if(AbilitySlot.AbilityInputAction)
+					{ 
+						UInputAction* ActionToBind = AbilitySlot.AbilityInputAction;
+						int32 AbilityIdToPass = AbilitySlot.AbilityId;
+
+						InputActions::Bind_Start(EnhancedInputComponent, ActionToBind, this, [this, AbilityIdToPass](const FInputActionValue& InputActionValue) {Input_AbilitySelection(AbilityIdToPass, InputActionValue); });
+					}
+				}
 				SetPawnControlDefaults();
 				SetPlayerInputMode();
 				SetInputDefault();
@@ -260,6 +271,18 @@ void APlayerMain::Input_CommandEnd(const FInputActionValue& InputActionValue)
 			Selectable->CommandEnd();
 		}
 	}
+}
+
+void APlayerMain::Input_AbilitySelection(int32 AbilitySlot, const FInputActionValue& InputActionValue)
+{
+	AControllerMain* PlayerController = Cast<AControllerMain>(GetController());
+	
+	if (!PlayerController)
+	{
+		return;
+	}
+	
+	PlayerController->SelectAbility(AbilitySlot);
 }
 
 

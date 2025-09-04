@@ -20,6 +20,14 @@ enum class ECommandState : uint8
 	Held
 };
 
+UENUM()
+enum class ESelectionState : uint8
+{
+	None,
+	ActorSelected,
+	AbilitySelected,
+};
+
 UCLASS()
 class RPGTESTS_API AControllerMain : public APlayerController, public ISelectable
 {
@@ -38,13 +46,13 @@ public:
 	virtual void CommandHold() override;
 	virtual void CommandEnd() override;
 
+	void SelectAbility(int32 AbilitySlot);
+
 	FOnMapDataLoadedDelegate OnMapDataLoaded;
 	FPrimaryAssetId GetMapData() const { return MapData; }
 
 protected:
 
-
-	
 	void AssignCommandTargetLocation();
 	FEntities_BaseCommandData CreateBaseCommandData();
 	void GetCommandType(EEntities_CommandTypes& CommandType, uint8& HasNavigation) const;
@@ -92,4 +100,7 @@ private:
 
 	UPROPERTY()
 	AActor* EnemySelected;
+
+	UPROPERTY()
+	FPrimaryAssetId AbilitySelected;
 };

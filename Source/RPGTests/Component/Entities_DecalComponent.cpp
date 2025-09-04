@@ -26,6 +26,7 @@ void UEntities_DecalComponent::BeginPlay()
 	{
 		return;
 	}
+
 	if (UEntities_Component* EntityComponent = UEntities_Component::FindEntityComponent(GetOwner()))
 	{
 		if (UMaterialInstance* SelectedMaterial = EntityComponent->GetSelectMaterial())
@@ -34,7 +35,7 @@ void UEntities_DecalComponent::BeginPlay()
 
 			const FVector Size = EntityComponent->GetSizeColl();
 			const float MaxRadius = FMath::Max(Size.X, Size.Y);
-			DecalSize = FVector(Size.Z, MaxRadius, MaxRadius);
+			DecalSize = FVector(Size.Z, MaxRadius+20.f, MaxRadius+20.f);
 			SetRelativeRotation(FRotator(90.f, 0.f, 0.f));
 
 			UpdateLocation();

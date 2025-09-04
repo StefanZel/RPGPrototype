@@ -4,6 +4,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
 #include "RPGTests/Component/Entities_Component.h"
+#include "RPGTests/Component/Entities_AbilityComponent.h"
 #include "RPGTests/Component/Entities_DecalComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
@@ -75,7 +76,6 @@ void AControllerMain::Select()
 		UE_LOG(LogTemp, Warning, TEXT("Selected Actor is %s"), *HitSelectable->GetName());
 	}
 	HandleSelected(true);
-	HandleHighlight(true);
 }
 
 void AControllerMain::Command()
@@ -101,6 +101,16 @@ void AControllerMain::CommandEnd()
 
 	CommandState = ECommandState::None;
 
+}
+
+void AControllerMain::SelectAbility(int32 AbilitySlot)
+{
+	if (HitSelectable)
+	{
+		UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
+
+		AbilitySelected = AbilityComponent->GetAbilityBySlot(AbilitySlot);
+	}
 }
 
 void AControllerMain::AssignCommandTargetLocation()
@@ -191,7 +201,7 @@ void AControllerMain::UpdateCommandData(const FEntities_BaseCommandData& BaseCom
 
 	//CommandData.SourceActor = HitSelectable;
 
-	// TODO@ Change this after refactoring actor spawning. Don't forget to change GetHitSelectable() to return actor on specific location
+	// TODO: Change this after refactoring actor spawning. Don't forget to change GetHitSelectable() to return actor on specific location
 	if (EnemySelected != nullptr)
 	{
 		CommandData.TargetActor = EnemySelected;
@@ -259,12 +269,11 @@ void AControllerMain::HandleSelected(const bool bSelect)
 void AControllerMain::ClearHitSelectable()
 {
 	HandleSelected(false);
-	HandleHighlight(false);
 
-	/*if (Selection != nullptr)
+	if (AbilitySelected.IsValid())
 	{
-		Selection = nullptr;
-	}*/
+		AbilitySelected = FPrimaryAssetId();
+	}
 
 	if(HitSelectable != nullptr)
 	{

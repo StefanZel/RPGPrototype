@@ -26,6 +26,9 @@ public:
 	}
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
+	TSoftClassPtr<AActor> BPClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	EEntities_AvailableTypes EntityType;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
@@ -54,4 +57,7 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Command)
 	TMap<EEntities_CommandTypes, TSoftClassPtr<UCommandBase>> Commands;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Ability, meta=(AllowedTypes="Abilities"))
+	TArray<FPrimaryAssetId> Abilities;
 };

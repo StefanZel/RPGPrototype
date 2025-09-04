@@ -37,6 +37,7 @@ void AGameModeMain::InitGameState()
 	if (AGameStateBaseMain* MainGameState = Cast<AGameStateBaseMain>(GameState))
 	{
 		MainGameState->ResetGameStateRegistry();
+		// TODO: Generate map data and create new struct for it.
 		MainGameState->CallOrRegisterPhase_OnGamePhaseLoadGameData(FOnGamePhaseLoadGameDataDelegate::FDelegate::CreateUObject(this, &ThisClass::InitGameData),
 			LoadGameDataTaskId, 
 			FString("GameMode - LoadGameData"));
@@ -167,8 +168,39 @@ void AGameModeMain::OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
 		if (AiDataAsset.Num() > 0)
 		{
 			const TArray<FName> Bundles;
-			const FStreamableDelegate DataLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnAllDataLoaded);
+			const FStreamableDelegate DataLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnAiDataLoaded, EntityDataAsset);
 			AssetManager->LoadPrimaryAssets(AiDataAsset, Bundles, DataLoadedDelegate);
+		}
+	}
+}
+
+void AGameModeMain::OnAiDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
+{
+	if (UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
+	{
+		TArray<FPrimaryAssetId> AbilityDataAsset;
+		for (int i = 0; i < EntityDataAsset.Num(); i++)
+		{
+			if (const UEntities_DataAssetMain* EntityData = Cast<UEntities_DataAssetMain>(AssetManager->GetPrimaryAssetObject(EntityDataAsset[i])))
+			{
+				if (EntityDataAsset[i].IsValid())
+				{
+					for (const FPrimaryAssetId& Ability : EntityData->Abilities)
+					{
+						AbilityDataAsset.AddUnique(Ability);
+					}
+				}
+				else
+				{
+					UE_LOG(LogTemp, Error, TEXT("[%s] Ability data not Assigned %s"), *GetClass()->GetName(), *EntityData->Name.ToString());
+				}
+			}
+		}
+		if (AbilityDataAsset.Num() > 0)
+		{
+			const TArray<FName> Bundles;
+			const FStreamableDelegate DataLoadedDelegate = FStreamableDelegate::CreateUObject(this, &ThisClass::OnAllDataLoaded);
+			AssetManager->LoadPrimaryAssets(AbilityDataAsset, Bundles, DataLoadedDelegate);
 		}
 	}
 }
@@ -208,7 +240,7 @@ void AGameModeMain::GenerateEnemySpawnLocation()
 		AEnemySpawnPoint* ESpawnPoint = *ActorItr;
 		if (ESpawnPoint)
 		{
-			EnemySpawnLocations.Add(ESpawnPoint->GetActorLocation());
+			EnemySpawnLocations.Add(ESpawnPoint->GetActorTransform());
 		}
 	}
 }
@@ -256,9 +288,8 @@ void AGameModeMain::GenerateEntityLocations(const UGameMode_BaseAsset* GameData)
 void AGameModeMain::CreateEntities()
 {
 	const UAssetManager* AssetManager = UAssetManager::GetIfInitialized();
-	const USettingsMain* Settings = GetDefault<USettingsMain>();
 	
-	if (!AssetManager || !Settings || !GetWorld() || !MainController)
+	if (!AssetManager || !GetWorld() || !MainController)
 	{
 		return;
 	}
@@ -277,26 +308,23 @@ void AGameModeMain::CreateEntities()
 				FTransform SpawnPosition{};
 				SpawnPosition.SetLocation(EntitySpawnLocations[i]);
 					
-				if(const TSoftClassPtr<APawn>* EntityClassPtr = Settings->EntitiesMap.Find(EntityData->EntityType))
+				if(EntityData->BPClass)
 				{
-					if(EntityClassPtr)
+					AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(EntityData->BPClass.LoadSynchronous(), SpawnPosition, MainController
+								, MainController->GetPawn(), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+
+					if(NewActor)
 					{
-						AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(EntityClassPtr->LoadSynchronous(), SpawnPosition, MainController
-									, MainController->GetPawn(), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+						// TODO: Add components and such
+						CreateEntityComponent(NewActor, CurrentGameData->Entities[i], i);
 
-						if(NewActor)
-						{
-							// TODO: Add components and such
-							CreateEntityComponent(NewActor, CurrentGameData->Entities[i], i);
+						AssignAiController(NewActor, EntityData);
 
-							AssignAiController(NewActor, EntityData);
-
-							AllEntities.Add(NewActor);
-						}
-
-						UGameplayStatics::FinishSpawningActor(NewActor, SpawnPosition);
-						PlayerEntities.Add(NewActor);
+						AllEntities.Add(NewActor);
 					}
+
+					UGameplayStatics::FinishSpawningActor(NewActor, SpawnPosition);
+					PlayerEntities.Add(NewActor);
 				}
 			}
 		}
@@ -315,7 +343,7 @@ void AGameModeMain::CreateEntityComponent(AActor* Entity, const FPrimaryAssetId&
 	}
 	if (UEntities_DecalComponent* DecalComponent = NewObject<UEntities_DecalComponent>(Entity, TEXT("DecalComponent")))
 	{
-		//DecalComponent->SetupAttachment(Entity->GetRootComponent());
+
 		Entity->AddInstanceComponent(DecalComponent);
 		DecalComponent->RegisterComponent();
 	}
@@ -358,19 +386,15 @@ void AGameModeMain::OnEntityCreationComplete()
 {
 	if (AGameStateBaseMain* DefGameState = Cast<AGameStateBaseMain>(GameState))
 	{
-		if (UGameMode_BaseAsset* GameData = GetGameData())
-		{
 			DefGameState->RegisterPhaseTaskComplete(CreateEntitiesTaskId);
-		}
 	}
 }
 
 void AGameModeMain::CreateEnemies()
 {
 	const UAssetManager* AssetManager = UAssetManager::GetIfInitialized();
-	const USettingsMain* Settings = GetDefault<USettingsMain>();
 
-	if (!AssetManager || !Settings || !GetWorld() || !MainController)
+	if (!AssetManager || !GetWorld() || !MainController)
 	{
 		return;
 	}
@@ -380,8 +404,8 @@ void AGameModeMain::CreateEnemies()
 		{
 			MapData->SetEntitiesWeight();
 			MapData->SetEnemiesToSpawn();
-			//SetEnemiesToSpawn(MapData);
 
+			//SetEnemiesToSpawn(MapData);
 			GenerateEnemySpawnLocation();
 			
 			UE_LOG(LogTemp, Log, TEXT("Entities to spawn: %d"), MapData->EnemiesToSpawn.Num());
@@ -396,25 +420,23 @@ void AGameModeMain::CreateEnemies()
 				UE_LOG(LogTemp, Log, TEXT("Spawning entity: %s at location: %s"), *MapData->EnemiesToSpawn[i]->GetName(), *EnemySpawnLocations[i].ToString());
 
 				FTransform SpawnPosition{};
-				SpawnPosition.SetLocation(EnemySpawnLocations[i]);
+				SpawnPosition.SetLocation(EnemySpawnLocations[i].GetLocation());
+				SpawnPosition.SetRotation(EnemySpawnLocations[i].GetRotation());
 
-				if (const TSoftClassPtr<APawn>* EntityClassPtr = Settings->EntitiesMap.Find(MapData->EnemiesToSpawn[i]->EntityType))
+				if (MapData->EnemiesToSpawn[i]->BPClass)
 				{
-					if (EntityClassPtr)
+					AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(MapData->EnemiesToSpawn[i]->BPClass.LoadSynchronous(), SpawnPosition, MainController
+						, MainController->GetPawn(), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+
+					if (NewActor)
 					{
-						AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(EntityClassPtr->LoadSynchronous(), SpawnPosition, MainController
-							, MainController->GetPawn(), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
+						FPrimaryAssetId EnemyAssetID = MapData->EnemiesToSpawn[i]->GetPrimaryAssetId();
+						CreateEntityComponent(NewActor, EnemyAssetID, i);
 
-						if (NewActor)
-						{
-							FPrimaryAssetId EnemyAssetID = MapData->EnemiesToSpawn[i]->GetPrimaryAssetId();
-							CreateEntityComponent(NewActor, EnemyAssetID, i);
-
-							AssignAiController(NewActor, MapData->EnemiesToSpawn[i]);
-						}
-
-						UGameplayStatics::FinishSpawningActor(NewActor, SpawnPosition);
+						AssignAiController(NewActor, MapData->EnemiesToSpawn[i]);
 					}
+
+					UGameplayStatics::FinishSpawningActor(NewActor, SpawnPosition);
 				}
 			}
 
@@ -429,12 +451,8 @@ void AGameModeMain::OnEnemiesCreated()
 {
 	if (AGameStateBaseMain* DefGameState = Cast<AGameStateBaseMain>(GameState))
 	{
-		if (UGameMode_BaseAsset* GameData = GetGameData())
-		{
 			DefGameState->RegisterPhaseTaskComplete(CreateEnemyTaskId);
-		}
 	}
-
 }
 
 

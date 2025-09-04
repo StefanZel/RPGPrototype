@@ -3,6 +3,7 @@
 
 #include "NavigationCommand.h"
 #include "RPGTests/Ai/Entities_AiControllerCommand.h"
+#include "RPGTests/Component/Entities_Component.h"
 
 UNavigationCommand::UNavigationCommand()
 {
@@ -43,7 +44,7 @@ void UNavigationCommand::Complete(const UEntities_Component* Entity, const EEnti
 
 bool UNavigationCommand::IsValid() const
 {
-	return false;
+	return Super::IsValid();
 }
 
 void UNavigationCommand::ExecuteNavigation()
@@ -52,13 +53,13 @@ void UNavigationCommand::ExecuteNavigation()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Black, FString::Printf(TEXT("Executed Navigation for Command:[%s]"), *Data.Id.ToString()));
 	}
-	if (Data.SourceActor != nullptr)
+	if (IsValid())
 	{
-		if (const APawn* EntityPawn = Cast<APawn>(Data.SourceActor))
+		if (UEntities_Component* Entity = UEntities_Component::FindEntityComponent(Data.SourceActor))
 		{
-			if ( AEntities_AiControllerCommand* AiController = Cast<AEntities_AiControllerCommand>(EntityPawn->GetController()))
+			if (!Entity->AssignedCommand(GetId()) && !Entity->HasCompletedCommand(GetId()))
 			{
-				AiController->ExecuteMovement(Data.GetLocation());
+				Entity->ExecuteNavigationCommand(this);
 			}
 		}
 	}

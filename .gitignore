@@ -4,6 +4,13 @@ Intermediate
 Saved
 .vscode
 .vs
+.cache
+.dir-locals.el
+.ignore
+RPGTests.code-workspace
+clangd_flags
+*.json
+*.bat
 *.VC.db
 *.opensdf
 *.opendb

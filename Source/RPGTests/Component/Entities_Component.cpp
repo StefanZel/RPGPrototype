@@ -1,5 +1,6 @@
 ﻿
 #include "Entities_Component.h"
+#include "RPGTests/Commands/CommandBase.h"
 #include "Engine/AssetManager.h"
 #include "Components/BoxComponent.h"
 #include "RPGTests/Ai/Entities_AiControllerCommand.h"
@@ -200,4 +201,26 @@ bool UEntities_Component::HasActiveCommandFor()
 		}
 	}
 	return false;
+}
+
+void UEntities_Component::ExecuteNavigationCommand(UCommandBase* Command)
+{
+	if(Command == nullptr) return;
+	
+	Commands.Add(Command);
+
+	AssignCommand(Command);
+}
+
+void UEntities_Component::AssignCommand(UCommandBase* Command)
+{
+	AActor* CurrentOwner = GetOwner();
+	if (const APawn* EntityPawn = Cast<APawn>(CurrentOwner))
+	{
+		if (AEntities_AiControllerCommand* AiController = Cast<AEntities_AiControllerCommand>(EntityPawn->GetController()))
+		{
+			AiController->ExecuteCommand(Command);	
+		}
+	}
+
 }

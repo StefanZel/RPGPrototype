@@ -3,6 +3,7 @@
 
 #include "CommandBase.h"
 #include "RPGTests/Component/Entities_Component.h"
+#include "RPGTests/Data/Entities/Entities_DataTypes.h"
 
 UCommandBase::UCommandBase()
 {
@@ -103,6 +104,10 @@ EEntities_CommandStatus UCommandBase::CheckStatus() const
 		if (EntityState == EEntities_CommandStatus::Active)
 		{
 			return EEntities_CommandStatus::Active;
+		}
+		if (EntityState == EEntities_CommandStatus::Completed)
+		{
+			return EEntities_CommandStatus::Completed;
 		}
 	}
 	// @TODO: Do the same thing for all commands.
