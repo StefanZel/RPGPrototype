@@ -2,7 +2,7 @@
 
 
 #include "Entities_AbilityComponent.h"
-#include "RPGTests/Interfaces/Abilities_InitializeInterface.h"
+#include "RPGTests/Interfaces/Abilities_Interface.h"
 #include "Engine/AssetManager.h"
 
 UEntities_AbilityComponent::UEntities_AbilityComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -26,15 +26,26 @@ void UEntities_AbilityComponent::ActivateAbility(const FPrimaryAssetId& Ability)
 		UAbilities_NormalDataAsset* AbilityAsset = GetAbilityData();
 		AActor* SpawnedAbilityClass = GetWorld()->SpawnActor<AActor>(AbilityAsset->AbilityClass.LoadSynchronous());
 
-		if (IAbilities_InitializeInterface* AbilityInitializer = Cast<IAbilities_InitializeInterface>(SpawnedAbilityClass))
+		if (IAbilities_Interface* AbilityInitializer = Cast<IAbilities_Interface>(SpawnedAbilityClass))
 		{
 			AbilityInitializer->InitializeAbility(SelectedAbility);
+			ActiveAbility = SpawnedAbilityClass;
 		}
 		else
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Failed to initialize ability."));
 		}
 
+	}
+}
+
+void UEntities_AbilityComponent::UpdateAbilityPosition(const FVector& Position)
+{
+	if (!ActiveAbility) return;
+
+	if (IAbilities_Interface* AbilityInterface = Cast<IAbilities_Interface>(ActiveAbility))
+	{
+		AbilityInterface->UpdateAbility(Position);
 	}
 }
 

@@ -146,6 +146,39 @@ void AGameModeMain::OnGameDataLoaded()
 
 void AGameModeMain::OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
 {
+	TArray<FSoftObjectPath> ClassesToLoad;
+
+	if (UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
+	{
+		for (const FPrimaryAssetId& AssetId : EntityDataAsset)
+		{
+			if (const UEntities_DataAssetMain* EntityData = Cast<UEntities_DataAssetMain>(AssetManager->GetPrimaryAssetObject(AssetId)))
+			{
+				if (!EntityData->BPClass.IsValid())
+				{
+					ClassesToLoad.Add(EntityData->BPClass.ToSoftObjectPath());
+				}
+			}
+		}
+
+		if (ClassesToLoad.Num() > 0)
+		{
+			FStreamableManager& StreamableManager = AssetManager->GetStreamableManager();
+
+			TSharedPtr<FStreamableHandle> Handle = StreamableManager.RequestAsyncLoad(
+				ClassesToLoad,
+				FStreamableDelegate::CreateUObject(this, &AGameModeMain::OnEntityClassesLoaded, EntityDataAsset)
+			);
+		}
+		else
+		{
+			OnEntityClassesLoaded(EntityDataAsset);
+		}
+	}
+}
+
+void AGameModeMain::OnEntityClassesLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
+{
 
 	if (UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
 	{
@@ -172,6 +205,7 @@ void AGameModeMain::OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
 			AssetManager->LoadPrimaryAssets(AiDataAsset, Bundles, DataLoadedDelegate);
 		}
 	}
+
 }
 
 void AGameModeMain::OnAiDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset)
@@ -307,10 +341,12 @@ void AGameModeMain::CreateEntities()
 			{
 				FTransform SpawnPosition{};
 				SpawnPosition.SetLocation(EntitySpawnLocations[i]);
-					
-				if(EntityData->BPClass)
+				
+				UClass* EntityClass = EntityData->BPClass.Get();
+
+				if(EntityClass)
 				{
-					AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(EntityData->BPClass.LoadSynchronous(), SpawnPosition, MainController
+					AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(EntityClass, SpawnPosition, MainController
 								, MainController->GetPawn(), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 
 					if(NewActor)
@@ -423,9 +459,11 @@ void AGameModeMain::CreateEnemies()
 				SpawnPosition.SetLocation(EnemySpawnLocations[i].GetLocation());
 				SpawnPosition.SetRotation(EnemySpawnLocations[i].GetRotation());
 
-				if (MapData->EnemiesToSpawn[i]->BPClass)
+				UClass* EnemiesClass = MapData->EnemiesToSpawn[i]->BPClass.Get();
+
+				if (EnemiesClass)
 				{
-					AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(MapData->EnemiesToSpawn[i]->BPClass.LoadSynchronous(), SpawnPosition, MainController
+					AActor* NewActor = GetWorld()->SpawnActorDeferred<AActor>(EnemiesClass, SpawnPosition, MainController
 						, MainController->GetPawn(), ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 
 					if (NewActor)
@@ -437,6 +475,7 @@ void AGameModeMain::CreateEnemies()
 					}
 
 					UGameplayStatics::FinishSpawningActor(NewActor, SpawnPosition);
+					EnemyEntities.Add(NewActor);
 				}
 			}
 

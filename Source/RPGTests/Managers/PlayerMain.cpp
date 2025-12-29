@@ -70,7 +70,6 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 				InputActions::Bind_StartTriggerComplete(EnhancedInputComponent, InputData->Command, this, &APlayerMain::Input_Command, &APlayerMain::Input_CommandHold, &APlayerMain::Input_CommandEnd);
 
-				//Not the best approach in my opinion, might revisit this later
 				for (const FAbilityInputData& AbilitySlot : InputData->AbilityInput)
 				{
 					if(AbilitySlot.AbilityInputAction)
@@ -78,7 +77,8 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 						UInputAction* ActionToBind = AbilitySlot.AbilityInputAction;
 						int32 AbilityIdToPass = AbilitySlot.AbilityId;
 
-						InputActions::Bind_Start(EnhancedInputComponent, ActionToBind, this, [this, AbilityIdToPass](const FInputActionValue& InputActionValue) {Input_AbilitySelection(AbilityIdToPass, InputActionValue); });
+						AbilityIdMap.Add(ActionToBind, AbilityIdToPass);
+						InputActions::Bind_Start(EnhancedInputComponent, ActionToBind, this, &APlayerMain::OnAbilityActionTriggered);
 					}
 				}
 				SetPawnControlDefaults();
@@ -178,6 +178,22 @@ void APlayerMain::UpdateCamera(const float DeltaTime)
 	}
 }
 
+void APlayerMain::OnAbilityActionTriggered(const FInputActionInstance& Instance)
+{
+	const UInputAction* TriggeredAction = Instance.GetSourceAction();
+	if (!TriggeredAction) return;
+
+	const int32* AbilityIdPtr = AbilityIdMap.Find(TriggeredAction);
+	if (!AbilityIdPtr) return;
+
+	const int32 AbilityId = *AbilityIdPtr;
+	const FInputActionValue& Value = Instance.GetValue();
+
+	Input_AbilitySelection(AbilityId, Value);
+
+
+}
+
 void APlayerMain::Input_Move(const FInputActionValue& InputActionValue)
 {
 	if (SpringArmComponent != nullptr && InputData != nullptr && ensure(InputActionValue.GetValueType() == EInputActionValueType::Axis2D))
@@ -273,8 +289,9 @@ void APlayerMain::Input_CommandEnd(const FInputActionValue& InputActionValue)
 	}
 }
 
-void APlayerMain::Input_AbilitySelection(int32 AbilitySlot, const FInputActionValue& InputActionValue)
+void APlayerMain::Input_AbilitySelection(int32 AbilityId, const FInputActionValue& InputActionValue)
 {
+
 	AControllerMain* PlayerController = Cast<AControllerMain>(GetController());
 	
 	if (!PlayerController)
@@ -282,7 +299,7 @@ void APlayerMain::Input_AbilitySelection(int32 AbilitySlot, const FInputActionVa
 		return;
 	}
 	
-	PlayerController->SelectAbility(AbilitySlot);
+	PlayerController->SelectAbility(AbilityId);
 }
 
 

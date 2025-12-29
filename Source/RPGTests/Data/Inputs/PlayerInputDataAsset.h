@@ -136,11 +136,7 @@ namespace InputActions
 	template<class T, class FuncType>
 	void Bind_Start(UEnhancedInputComponent* EnhancedInputComponent, const UInputAction* Action, T* Obj, FuncType StartFunc)
 	{
-
-		if (StartFunc != nullptr)
-		{
 			EnhancedInputComponent->BindAction(Action, ETriggerEvent::Started, Obj, StartFunc);
-		}
 	}
 
 	template<class T, class FuncType>

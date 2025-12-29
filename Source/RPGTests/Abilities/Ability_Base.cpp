@@ -3,6 +3,7 @@
 #include "Ability_Base.h"
 #include "RPGTests/Managers/ControllerMain.h"
 #include "RPGTests/Component/Entities_Component.h"
+#include "Engine/AssetManager.h"
 
 AAbility_Base::AAbility_Base(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -25,7 +26,38 @@ void AAbility_Base::BeginPlay()
 	
 }
 
+UAbilities_NormalDataAsset* AAbility_Base::GetAbilityData() 
+{	
+	const UAssetManager* AssetManager = UAssetManager::GetIfInitialized();
+
+	if (AssetManager)
+	{
+		return Cast<UAbilities_NormalDataAsset>(AssetManager->GetPrimaryAssetObject(ThisAbilityData));
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+float AAbility_Base::GetAbilityRange()
+{
+	float DefaultRange = 1.f;
+
+	if (const UAbilities_NormalDataAsset* Data = GetAbilityData())
+	{
+		return Data->XRange;
+	}
+	return DefaultRange;
+
+}
+
 void AAbility_Base::InitializeAbility(const FPrimaryAssetId& AbilityData)
+{
+	ThisAbilityData = AbilityData;
+}
+
+void AAbility_Base::UpdateAbility(const FVector& Position)
 {
 }
 

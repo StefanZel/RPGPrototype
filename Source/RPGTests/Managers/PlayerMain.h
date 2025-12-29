@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "InputActionValue.h"
+#include "InputAction.h"
 #include "PlayerMain.generated.h"
 
 class UInputMappingContext;
@@ -42,6 +43,12 @@ protected:
 
 	UPROPERTY()
 	UPlayerInputDataAsset* InputData;
+
+	UPROPERTY()
+	TMap<const UInputAction*, int32> AbilityIdMap;
+
+	UFUNCTION()
+	void OnAbilityActionTriggered(const FInputActionInstance& Instance);
 	
 
 
@@ -55,7 +62,7 @@ protected:
 	virtual void Input_Command(const FInputActionValue& InputActionValue);
 	virtual void Input_CommandHold(const FInputActionValue& InputActionValue);
 	virtual void Input_CommandEnd(const FInputActionValue& InputActionValue);
-	virtual void Input_AbilitySelection(int32 AbilitySlot, const FInputActionValue& InputActionValue);
+	virtual void Input_AbilitySelection(int32 AbilityId, const FInputActionValue& InputActionValue);
 
 private:
 

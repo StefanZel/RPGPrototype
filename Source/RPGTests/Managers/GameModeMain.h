@@ -34,6 +34,7 @@ protected:
 	void OnGameDataAssigned();
 	void OnGameDataLoaded();
 	void OnEntityDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset);
+	void OnEntityClassesLoaded(TArray<FPrimaryAssetId> EntityDataAsset);
 	void OnAiDataLoaded(TArray<FPrimaryAssetId> EntityDataAsset);
 	void OnAllDataLoaded();
 	FVector EntitySpawnStartLocation();
@@ -60,6 +61,9 @@ protected:
 
 	UPROPERTY()
 	TArray<AActor*> PlayerEntities;
+
+	UPROPERTY()
+	TArray<AActor*> EnemyEntities;
 
 	UPROPERTY()
 	TArray<FVector> EntitySpawnLocations;

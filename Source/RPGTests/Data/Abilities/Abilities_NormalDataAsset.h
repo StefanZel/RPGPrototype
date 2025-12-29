@@ -7,6 +7,8 @@
 #include "Engine/DataAsset.h"
 #include "Abilities_NormalDataAsset.generated.h"
 
+class UNiagaraSystem;
+
 /**
  * 
  */
@@ -25,7 +27,13 @@ public:
 	}
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	TSoftClassPtr<AActor*> AbilityClass;
+	TSoftClassPtr<AActor> AbilityClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
+	TSoftObjectPtr<UNiagaraSystem> NiagaraEffect;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
+	TSoftObjectPtr<UStaticMeshComponent> MeshComponent;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
 	EAbilities_Type Type;

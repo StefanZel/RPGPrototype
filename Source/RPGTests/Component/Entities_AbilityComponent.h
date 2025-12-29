@@ -22,6 +22,7 @@ public:
 	static UEntities_AbilityComponent* FindEntityAbilityComponent(const AActor* Entity) { return (Entity ? Entity->FindComponentByClass<UEntities_AbilityComponent>() : nullptr); }
 
 	void ActivateAbility(const FPrimaryAssetId& Ability);
+	void UpdateAbilityPosition(const FVector& Position);
 	FPrimaryAssetId GetAbilityBySlot(int32 AbilitySlot);
 private:
 	void SetAbilityDataAssets();
@@ -34,4 +35,7 @@ private:
 
 	UPROPERTY()
 	FPrimaryAssetId SelectedAbility;
+
+	UPROPERTY()
+	AActor* ActiveAbility;
 };
