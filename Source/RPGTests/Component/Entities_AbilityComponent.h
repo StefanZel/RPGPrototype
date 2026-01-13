@@ -23,6 +23,7 @@ public:
 
 	void ActivateAbility(const FPrimaryAssetId& Ability);
 	void UpdateAbilityPosition(const FVector& Position);
+	void ExecuteAbility();
 	FPrimaryAssetId GetAbilityBySlot(int32 AbilitySlot);
 private:
 	void SetAbilityDataAssets();

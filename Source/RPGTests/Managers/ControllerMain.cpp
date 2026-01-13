@@ -64,6 +64,10 @@ void AControllerMain::GetMousePositionOnTerrain(FVector& TerrainPosition) const
 
 void AControllerMain::Select()
 {
+	if (AbilitySelected.IsValid() && HitSelectable)
+	{
+		ExecuteAbility();
+	}
 
 
 
@@ -110,6 +114,10 @@ void AControllerMain::SelectAbility(int32 AbilitySlot)
 		UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
 
 		AbilitySelected = AbilityComponent->GetAbilityBySlot(AbilitySlot);
+
+		AbilityComponent->ActivateAbility(AbilitySelected);
+
+		StartUpdatingAbility();
 	}
 }
 
@@ -216,6 +224,44 @@ void AControllerMain::UpdateCommandData(const FEntities_BaseCommandData& BaseCom
 void AControllerMain::GetCommandNavigationData(FEntities_CommandData& CommandData) const
 {
 	CommandData.Navigation = FEntities_Navigation();
+}
+
+void AControllerMain::StartUpdatingAbility()
+{	
+	if (!GetWorld()->GetTimerManager().IsTimerActive(HandleAbilityUpdate))
+	{
+		GetWorld()->GetTimerManager().SetTimer(HandleAbilityUpdate, this, &ThisClass::UpdateAbility, 0.01f, true);
+	}
+}
+
+void AControllerMain::UpdateAbility()
+{
+	if (AbilitySelected.IsValid() && HitSelectable)
+	{
+		UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
+
+		FVector TerrainPosition;
+		GetMousePositionOnTerrain(TerrainPosition);
+		
+		AbilityComponent->UpdateAbilityPosition(TerrainPosition);
+	}
+}
+
+void AControllerMain::EndUpdatingAbility()
+{
+	GetWorld()->GetTimerManager().ClearTimer(HandleAbilityUpdate);
+}
+
+void AControllerMain::ExecuteAbility()
+{
+
+	UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
+
+	AbilityComponent->ExecuteAbility();
+
+	AbilitySelected = FPrimaryAssetId();
+
+	EndUpdatingAbility();
 }
 
 void AControllerMain::CommandHistory(const FGuid Id, const bool Success)

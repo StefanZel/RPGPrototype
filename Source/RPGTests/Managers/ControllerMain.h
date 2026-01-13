@@ -61,6 +61,12 @@ protected:
 	void UpdateCommandData(const FEntities_BaseCommandData& BaseCommandData, FEntities_CommandData& CommandData, const bool Preview = false);
 	void GetCommandNavigationData(FEntities_CommandData& CommandData) const;
 
+	void StartUpdatingAbility();
+	void UpdateAbility();
+	void EndUpdatingAbility();
+
+	void ExecuteAbility();
+
 	UPROPERTY()
 	ECommandState CommandState;
 
@@ -103,4 +109,8 @@ private:
 
 	UPROPERTY()
 	FPrimaryAssetId AbilitySelected;
+
+	UPROPERTY()
+	FTimerHandle HandleAbilityUpdate;
+
 };

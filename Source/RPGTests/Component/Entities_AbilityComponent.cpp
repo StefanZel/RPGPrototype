@@ -49,6 +49,15 @@ void UEntities_AbilityComponent::UpdateAbilityPosition(const FVector& Position)
 	}
 }
 
+void UEntities_AbilityComponent::ExecuteAbility()
+{
+	if (!ActiveAbility) return;
+
+	ActiveAbility->Destroy();
+	ActiveAbility = nullptr;
+	SelectedAbility = FPrimaryAssetId();
+}
+
 FPrimaryAssetId UEntities_AbilityComponent::GetAbilityBySlot(int32 AbilitySlot)
 {
 	if (AvailableAbilityDataAssets.IsValidIndex(AbilitySlot))

@@ -11,6 +11,7 @@
 #include "SettingsMain.h"
 #include "Kismet/GameplayStatics.h"
 #include "RPGTests/Component/Entities_Component.h"
+#include "RPGTests/Component/Entities_AbilityComponent.h"
 #include "RPGTests/Component/Entities_DecalComponent.h"
 #include "RPGTests/Data/Ai/Ai_DataAssetMain.h"
 #include "RPGTests/Ai/Entities_AiControllerMain.h"
@@ -371,7 +372,7 @@ void AGameModeMain::CreateEntities()
 void AGameModeMain::CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset,
 	const int32 EntityIndex)
 {
-	if(UEntities_Component* EntityComponent = NewObject<UEntities_Component>(Entity, TEXT("EntityComponent")))
+	if(UEntities_AbilityComponent* EntityComponent = NewObject<UEntities_AbilityComponent>(Entity, TEXT("EntityComponent")))
 	{
 		Entity->AddInstanceComponent(EntityComponent);
 		EntityComponent->RegisterComponent();

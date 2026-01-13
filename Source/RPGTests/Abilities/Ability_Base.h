@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "RPGTests/Interfaces/Abilities_Interface.h"
 #include "RPGTests/Data/Abilities/Abilities_NormalDataAsset.h"
+#include "RPGTests/Component/Entities_Component.h"
 #include "NiagaraComponent.h"
 #include "Ability_Base.generated.h"
 
@@ -22,7 +23,7 @@ public:
 	UStaticMeshComponent* MeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	UNiagaraSystem* NiagaraEffect;
+	UNiagaraComponent* NiagaraEffect;
 	// TODO: Remember! This should take the calculated data from the ability component, not the AssetId.
 	virtual void InitializeAbility(const FPrimaryAssetId& AbilityData) override;
 	virtual void UpdateAbility(const FVector& Position) override;
@@ -33,12 +34,12 @@ protected:
 	virtual void BeginPlay() override;
 	UAbilities_NormalDataAsset* GetAbilityData();
 	float GetAbilityRange();
+	void CheckForTargets();
+	void SetEffectSize();
 
-	UFUNCTION()
-	void OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UPROPERTY()
+	TSet<TWeakObjectPtr<UEntities_Component>> ActiveTargets;
 
-	UFUNCTION()
-	void OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 public:	
 	virtual void Tick(float DeltaTime) override;
 
