@@ -6,7 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "RPGTests/Interfaces/Abilities_Interface.h"
 #include "RPGTests/Data/Abilities/Abilities_NormalDataAsset.h"
-#include "RPGTests/Component/Entities_Component.h"
 #include "NiagaraComponent.h"
 #include "Ability_Base.generated.h"
 
@@ -27,6 +26,7 @@ public:
 	// TODO: Remember! This should take the calculated data from the ability component, not the AssetId.
 	virtual void InitializeAbility(const FPrimaryAssetId& AbilityData) override;
 	virtual void UpdateAbility(const FVector& Position) override;
+	virtual TArray<AActor*> GetTargetActorsOnExecute() override;
 private:
 	UPROPERTY()
 	FPrimaryAssetId ThisAbilityData;
@@ -38,7 +38,7 @@ protected:
 	void SetEffectSize();
 
 	UPROPERTY()
-	TSet<TWeakObjectPtr<UEntities_Component>> ActiveTargets;
+	TSet<TWeakObjectPtr<AActor>> ActiveTargets;
 
 public:	
 	virtual void Tick(float DeltaTime) override;

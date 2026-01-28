@@ -6,5 +6,6 @@ void FEntities_CommandData::ApplyBaseData(const FEntities_BaseCommandData& BaseD
 	SourceTransform = BaseData.SourceTransform;
 	TargetTransform = BaseData.TargetTransform;
 	CommandType = BaseData.CommandType;
+	MovementType = BaseData.MovementType;
 	HasNavigation = BaseData.HasNavigation;
 }

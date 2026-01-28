@@ -49,10 +49,30 @@ void UEntities_AbilityComponent::UpdateAbilityPosition(const FVector& Position)
 	}
 }
 
-void UEntities_AbilityComponent::ExecuteAbility()
+void UEntities_AbilityComponent::ExecuteAbility(TArray<AActor*>& OutTargets)
 {
 	if (!ActiveAbility) return;
 
+	TArray<AActor*> Targets;
+	if (IAbilities_Interface* AbilityInterface = Cast<IAbilities_Interface>(ActiveAbility))
+	{
+		Targets = AbilityInterface->GetTargetActorsOnExecute();
+	}
+
+	for (const AActor* HighlightedTargets : Targets)
+	{
+		if (UEntities_Component* EntityComponent = UEntities_Component::FindEntityComponent(HighlightedTargets))
+		{
+			EntityComponent->Highlight(false);
+		}
+	}
+	
+	DestroyAbility();
+}
+
+void UEntities_AbilityComponent::DestroyAbility()
+{
+	if (!ActiveAbility) return;
 	ActiveAbility->Destroy();
 	ActiveAbility = nullptr;
 	SelectedAbility = FPrimaryAssetId();

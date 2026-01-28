@@ -24,4 +24,5 @@ class RPGTESTS_API IAbilities_Interface
 public:
 	virtual void InitializeAbility(const FPrimaryAssetId& AbilityData) = 0;
 	virtual void UpdateAbility(const FVector& Position) = 0;
+	virtual TArray<AActor*> GetTargetActorsOnExecute() = 0;
 };

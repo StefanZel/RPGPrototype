@@ -8,7 +8,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
-#include "RPGTests/Selectable.h"
+#include "RPGTests/Interfaces/Selectable.h"
 
 
 APlayerMain::APlayerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -262,7 +262,7 @@ void APlayerMain::Input_Command(const FInputActionValue& InputActionValue)
 	{
 		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
 		{
-			Selectable->Command();
+			Selectable->CommandMove();
 		}
 	}
 }
@@ -273,7 +273,7 @@ void APlayerMain::Input_CommandHold(const FInputActionValue& InputActionValue)
 	{
 		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
 		{
-			Selectable->CommandHold();
+			Selectable->CommandMoveHold();
 		}
 	}
 }
@@ -284,22 +284,20 @@ void APlayerMain::Input_CommandEnd(const FInputActionValue& InputActionValue)
 	{
 		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
 		{
-			Selectable->CommandEnd();
+			Selectable->CommandMoveEnd();
 		}
 	}
 }
 
 void APlayerMain::Input_AbilitySelection(int32 AbilityId, const FInputActionValue& InputActionValue)
 {
-
-	AControllerMain* PlayerController = Cast<AControllerMain>(GetController());
-	
-	if (!PlayerController)
+	if (GetController())
 	{
-		return;
+		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
+		{
+			Selectable->SelectAbility(AbilityId);
+		}
 	}
-	
-	PlayerController->SelectAbility(AbilityId);
 }
 
 

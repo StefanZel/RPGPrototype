@@ -82,19 +82,19 @@ void AControllerMain::Select()
 	HandleSelected(true);
 }
 
-void AControllerMain::Command()
+void AControllerMain::CommandMove()
 {
 	CommandState = ECommandState::Initiated;
 
 	AssignCommandTargetLocation();
 }
 
-void AControllerMain::CommandHold()
+void AControllerMain::CommandMoveHold()
 {
 	CommandState = ECommandState::Held;
 }
 
-void AControllerMain::CommandEnd()
+void AControllerMain::CommandMoveEnd()
 {
 	const FEntities_BaseCommandData BaseCommandData = CreateBaseCommandData();
 
@@ -125,15 +125,16 @@ void AControllerMain::AssignCommandTargetLocation()
 {
 	FVector MouseLocation = FVector::ZeroVector;
 	GetMousePositionOnTerrain(MouseLocation);
-	CommandTargetLocation = MouseLocation;
+	MovementLocation = MouseLocation;
 }
 
 FEntities_BaseCommandData AControllerMain::CreateBaseCommandData()
 {
-	EEntities_CommandTypes CommandType = EEntities_CommandTypes::None;
+	EEntities_CommandTypes CommandTypes = EEntities_CommandTypes::None;
+	EEntities_MovementTypes MovementTypes = EEntities_MovementTypes::None;
 	uint8 HasNavigation = false;
 
-	GetCommandType(CommandType, HasNavigation);
+	GetCommandType(CommandTypes, MovementTypes, HasNavigation);
 
 	FVector MouseLocation = FVector::ZeroVector;
 	GetMousePositionOnTerrain(MouseLocation);
@@ -143,13 +144,13 @@ FEntities_BaseCommandData AControllerMain::CreateBaseCommandData()
 
 
 
-	const FVector TargetLocation = CommandState > ECommandState::None ? CommandTargetLocation : MouseLocation;
+	const FVector TargetLocation = CommandState > ECommandState::None ? MovementLocation : MouseLocation;
 
 	const FRotator TargetRotation = (MouseLocation - TargetLocation).Length() > 150.f
 		? FRotationMatrix::MakeFromX(MouseLocation - TargetLocation).Rotator()
 		: FRotationMatrix::MakeFromX(TargetLocation - SourceLocation).Rotator();
 
-	FEntities_BaseCommandData BaseCommandData = FEntities_BaseCommandData(CommandType, HasNavigation);
+	FEntities_BaseCommandData BaseCommandData = FEntities_BaseCommandData(CommandTypes, MovementTypes, HasNavigation);
 	BaseCommandData.SetTargetLocation(TargetLocation);
 	BaseCommandData.SetTargetRotation(TargetRotation);
 	BaseCommandData.SetSourceLocation(SourceLocation);
@@ -157,12 +158,14 @@ FEntities_BaseCommandData AControllerMain::CreateBaseCommandData()
 	return BaseCommandData;
 }
 
-void AControllerMain::GetCommandType(EEntities_CommandTypes& CommandType, uint8& HasNavigation) const
+void AControllerMain::GetCommandType(EEntities_CommandTypes& CommandTypes, EEntities_MovementTypes& MovementTypes, uint8& HasNavigation) const
 {
-	// This will change later. It will depend on mouse position, spell selection, etc.
-
-	CommandType = EEntities_CommandTypes::NavigateTo;
-	HasNavigation = true;
+	if (HitSelectable)
+	{
+		CommandTypes = EEntities_CommandTypes::Navigation;
+		MovementTypes = EEntities_MovementTypes::NavigateTo;
+		HasNavigation = true;	
+	}
 }
 
 void AControllerMain::GetSourceLocation(FVector& SourceLocation)
@@ -181,6 +184,7 @@ UCommandBase* AControllerMain::CreateCommand(const FEntities_BaseCommandData& Ba
 		{
 			if (UEntities_DataAssetMain* EntityData = Entity->GetData())
 			{
+				// TODO: This check is pointless, delete it
 				if (const TSoftClassPtr<UCommandBase>* CommandClassPtr = EntityData->Commands.Find(BaseCommandData.CommandType))
 				{
 					if (UCommandBase* NewCommand = NewObject<UCommandBase>(this, CommandClassPtr->LoadSynchronous()))
@@ -240,10 +244,9 @@ void AControllerMain::UpdateAbility()
 	{
 		UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
 
-		FVector TerrainPosition;
-		GetMousePositionOnTerrain(TerrainPosition);
+		GetMousePositionOnTerrain(AbilityPosition);
 		
-		AbilityComponent->UpdateAbilityPosition(TerrainPosition);
+		AbilityComponent->UpdateAbilityPosition(AbilityPosition);
 	}
 }
 
@@ -256,8 +259,10 @@ void AControllerMain::ExecuteAbility()
 {
 
 	UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
-
-	AbilityComponent->ExecuteAbility();
+	
+	TArray<AActor*> AbilityTargets;
+	
+	AbilityComponent->ExecuteAbility(AbilityTargets);
 
 	AbilitySelected = FPrimaryAssetId();
 

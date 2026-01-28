@@ -23,7 +23,8 @@ public:
 
 	void ActivateAbility(const FPrimaryAssetId& Ability);
 	void UpdateAbilityPosition(const FVector& Position);
-	void ExecuteAbility();
+	void ExecuteAbility(TArray<AActor*>& OutTargets);
+	void DestroyAbility();
 	FPrimaryAssetId GetAbilityBySlot(int32 AbilitySlot);
 private:
 	void SetAbilityDataAssets();

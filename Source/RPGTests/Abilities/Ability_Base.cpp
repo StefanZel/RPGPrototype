@@ -1,9 +1,9 @@
 
 
 #include "Ability_Base.h"
-#include "RPGTests/Managers/ControllerMain.h"
 #include "RPGTests/Data/AStaticGameData.h"
 #include "Engine/AssetManager.h"
+#include "RPGTests/Component/Entities_Component.h"
 
 AAbility_Base::AAbility_Base(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
@@ -66,7 +66,7 @@ void AAbility_Base::CheckForTargets()
 
 	bool bHasHits = GetWorld()->OverlapMultiByChannel(Overlaps, Position, Rotation, TRACE_CHANNEL_ENTITY, MeshShape, Params);
 
-	TSet<TWeakObjectPtr<UEntities_Component>> NewTargets;
+	TSet<TWeakObjectPtr<AActor>> NewTargets;
 
 	for (const FOverlapResult& Result : Overlaps)
 	{
@@ -74,8 +74,8 @@ void AAbility_Base::CheckForTargets()
 		{
 			if (auto* EntityComponent = UEntities_Component::FindEntityComponent(OverlappedActor))
 			{
-				NewTargets.Add(EntityComponent);
-				if (!ActiveTargets.Contains(EntityComponent))
+				NewTargets.Add(OverlappedActor);
+				if (!ActiveTargets.Contains(OverlappedActor))
 				{
 					EntityComponent->Highlight(true);
 				}
@@ -89,7 +89,10 @@ void AAbility_Base::CheckForTargets()
 		{
 			if (It->IsValid())
 			{
-				(*It)->Highlight(false);
+				if (UEntities_Component* EntityComponent = UEntities_Component::FindEntityComponent(It->Get()))
+				{
+				EntityComponent->Highlight(false);
+				}
 			}
 			It.RemoveCurrent();
 		}
@@ -134,6 +137,20 @@ void AAbility_Base::UpdateAbility(const FVector& Position)
 	SetActorLocation(Position);
 
 	CheckForTargets();
+}
+
+TArray<AActor*> AAbility_Base::GetTargetActorsOnExecute()
+{
+	TArray<AActor*> Targets;
+	
+	for (const TWeakObjectPtr<AActor>& WeakActor : ActiveTargets)
+	{
+		if (AActor* RawActor = WeakActor.Get())
+		{
+			Targets.Add(RawActor);
+		}
+	}
+	return Targets;
 }
 
 void AAbility_Base::Tick(float DeltaTime)

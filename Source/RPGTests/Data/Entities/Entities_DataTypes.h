@@ -27,8 +27,27 @@ UENUM()
 enum class EEntities_CommandTypes : uint8
 {
 	None,
+	Navigation,
+	Ability,
+	AbilityNavigation
+};
+
+UENUM()
+enum class EEntities_MovementTypes : uint8
+{
+	None,
 	NavigateTo
 	// This will containt commands such as sneak, dash, jump, attack, etc.
+};
+
+UENUM()
+enum class EEntities_AbilityTypes: uint8
+{
+	None,
+	SingleTarget,
+	SingleTargetWithMovement,
+	AreaOfEffect,
+	AreaOfEffectWithMovement
 };
 
 UENUM()
@@ -94,13 +113,15 @@ struct FEntities_BaseCommandData
 public:
 	FEntities_BaseCommandData() :
 		CommandType(EEntities_CommandTypes::None),
+		MovementType(EEntities_MovementTypes::None),
 		HasNavigation(false),
 		TargetTransform(FTransform::Identity),
 		SourceTransform(FTransform::Identity)
 	{}
 
-	FEntities_BaseCommandData(const EEntities_CommandTypes InType, const uint8 HasNavigation) :
-		CommandType(InType),
+	FEntities_BaseCommandData(const EEntities_CommandTypes InCmdType, const EEntities_MovementTypes InNvgType, const uint8 HasNavigation) :
+		CommandType(InCmdType),
+		MovementType(InNvgType),
 		HasNavigation(HasNavigation),
 		TargetTransform(FTransform::Identity),
 		SourceTransform(FTransform::Identity)
@@ -111,9 +132,11 @@ public:
 	void SetSourceLocation(const FVector& Location) { SourceTransform.SetLocation(Location); }
 	void SetSourceRotation(const FRotator& Rotation) { SourceTransform.SetRotation(Rotation.Quaternion()); }
 
-
 	UPROPERTY()
 	EEntities_CommandTypes CommandType;
+
+	UPROPERTY()
+	EEntities_MovementTypes MovementType;
 
 	UPROPERTY()
 	uint8 HasNavigation : 1;
@@ -164,6 +187,7 @@ public:
 	FEntities_CommandData(): 
 		Id(FGuid::NewGuid()),
 		CommandType(EEntities_CommandTypes::None),
+		MovementType(EEntities_MovementTypes::None),
 		CommandStatus(EEntities_CommandStatus::None),
 		TargetTransform(FTransform::Identity),
 		SourceTransform(FTransform::Identity),
@@ -173,7 +197,7 @@ public:
 		Navigation(FEntities_Navigation())
 	{}
 
-	bool IsValid() const { return CommandType != EEntities_CommandTypes::None; }
+	bool IsValid() const { return MovementType != EEntities_MovementTypes::None; }
 	void ApplyBaseData(const FEntities_BaseCommandData& BaseData);
 	FVector GetLocation() const { return TargetTransform.GetLocation(); }
 	FRotator GetRotation() const { return TargetTransform.GetRotation().Rotator(); }
@@ -183,6 +207,9 @@ public:
 
 	UPROPERTY()
 	EEntities_CommandTypes CommandType;
+	
+	UPROPERTY()
+	EEntities_MovementTypes MovementType;
 
 	UPROPERTY()
 	EEntities_CommandStatus CommandStatus;

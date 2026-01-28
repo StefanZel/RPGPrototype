@@ -2,7 +2,7 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
-#include "RPGTests/Selectable.h"
+#include "RPGTests/Interfaces/Selectable.h"
 #include "RPGTests/Data/Entities/Entities_DataTypes.h"
 #include "ControllerMain.generated.h"
 
@@ -42,11 +42,10 @@ public:
 	void GetMousePositionOnTerrain(FVector& TerrainPosition) const;
 
 	virtual void Select() override;
-	virtual void Command() override;
-	virtual void CommandHold() override;
-	virtual void CommandEnd() override;
-
-	void SelectAbility(int32 AbilitySlot);
+	virtual void CommandMove() override;
+	virtual void CommandMoveHold() override;
+	virtual void CommandMoveEnd() override;
+	virtual void SelectAbility(int32 AbilitySlot) override;
 
 	FOnMapDataLoadedDelegate OnMapDataLoaded;
 	FPrimaryAssetId GetMapData() const { return MapData; }
@@ -55,7 +54,7 @@ protected:
 
 	void AssignCommandTargetLocation();
 	FEntities_BaseCommandData CreateBaseCommandData();
-	void GetCommandType(EEntities_CommandTypes& CommandType, uint8& HasNavigation) const;
+	void GetCommandType(EEntities_CommandTypes& CommandTypes, EEntities_MovementTypes& MovementTypes, uint8& HasNavigation) const;
 	void GetSourceLocation(FVector& SourceLocation);
 	UCommandBase* CreateCommand(const FEntities_BaseCommandData& BaseCommandData);
 	void UpdateCommandData(const FEntities_BaseCommandData& BaseCommandData, FEntities_CommandData& CommandData, const bool Preview = false);
@@ -71,7 +70,10 @@ protected:
 	ECommandState CommandState;
 
 	UPROPERTY()
-	FVector CommandTargetLocation;
+	FVector MovementLocation;
+	
+	UPROPERTY()
+	FVector AbilityPosition;
 
 	void CommandHistory(const FGuid Id, const bool Success);
 
