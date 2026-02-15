@@ -10,10 +10,9 @@ UEntities_AbilityComponent::UEntities_AbilityComponent(const FObjectInitializer&
 
 }
 
-void UEntities_AbilityComponent::Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex)
+void UEntities_AbilityComponent::Initialize(const FPrimaryAssetId& NewEntityAssetId)
 {
-	Super::Initialize(NewEntityDataAsset, NewEntityIndex);
-
+	EntityAssetId = NewEntityAssetId;
 	SetAbilityDataAssets();
 }
 
@@ -97,9 +96,21 @@ bool UEntities_AbilityComponent::IsAbilityValid() const
 	return false;
 }
 
+UEntities_DataAssetMain* UEntities_AbilityComponent::GetEntityData() const
+{
+	if (const UAssetManager* AssetManager = UAssetManager::GetIfInitialized())
+	{
+		if (EntityAssetId.IsValid())
+		{
+			return Cast<UEntities_DataAssetMain>(AssetManager->GetPrimaryAssetObject(EntityAssetId));
+		}
+	}
+	return nullptr;	
+}
+
 void UEntities_AbilityComponent::SetAbilityDataAssets()
 {
-	if (const UEntities_DataAssetMain* Data = GetData())
+	if (const UEntities_DataAssetMain* Data = GetEntityData())
 	{
 		AvailableAbilityDataAssets.Append(Data->Abilities);
 	}

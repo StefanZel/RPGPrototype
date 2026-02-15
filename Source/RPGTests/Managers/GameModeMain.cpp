@@ -18,6 +18,8 @@
 #include "RPGTests/Ai/Entities_AiControllerCommand.h"
 #include "RPGTests/Props/EnemySpawnPoint.h"
 #include "GameFramework/Controller.h"
+#include "RPGTests/Component/Entities_StatComponent.h"
+#include "RPGTests/Data/Entities/Entities_Tags.h"
 
 
 AGameModeMain::AGameModeMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -56,7 +58,6 @@ void AGameModeMain::InitGameState()
 void AGameModeMain::BeginPlay()
 {
 	Super::BeginPlay();
-
 
 	MainController = Cast<AControllerMain>(GetWorld()->GetFirstPlayerController());
 }
@@ -372,11 +373,25 @@ void AGameModeMain::CreateEntities()
 void AGameModeMain::CreateEntityComponent(AActor* Entity, const FPrimaryAssetId& EntityDataAsset,
 	const int32 EntityIndex)
 {
-	if(UEntities_AbilityComponent* EntityComponent = NewObject<UEntities_AbilityComponent>(Entity, TEXT("EntityComponent")))
+	UEntities_Component* BaseEntityComponent = nullptr;
+	if (!Entity->FindComponentByClass<UEntities_Component>())
+	{
+		BaseEntityComponent = NewObject<UEntities_Component>(Entity, TEXT("EntityComponent"));
+		Entity->AddInstanceComponent(BaseEntityComponent);
+		BaseEntityComponent->RegisterComponent();
+		BaseEntityComponent->Initialize(EntityDataAsset, EntityIndex);
+	}
+	if(UEntities_StatComponent* EntityStatComponent = NewObject<UEntities_StatComponent>(Entity, TEXT("EntityStatComponent")))
+	{
+		Entity->AddInstanceComponent(EntityStatComponent);
+		EntityStatComponent->RegisterComponent();
+		EntityStatComponent->Initialize(EntityDataAsset);
+	}
+	if(UEntities_AbilityComponent* EntityComponent = NewObject<UEntities_AbilityComponent>(Entity, TEXT("EntityAbilityComponent")))
 	{
 		Entity->AddInstanceComponent(EntityComponent);
 		EntityComponent->RegisterComponent();
-		EntityComponent->Initialize(EntityDataAsset, EntityIndex);
+		EntityComponent->Initialize(EntityDataAsset);
 	}
 	if (UEntities_DecalComponent* DecalComponent = NewObject<UEntities_DecalComponent>(Entity, TEXT("DecalComponent")))
 	{

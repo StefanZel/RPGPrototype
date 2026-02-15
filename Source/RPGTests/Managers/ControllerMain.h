@@ -2,6 +2,8 @@
 #pragma once
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "RPGTests/Data/Abilities/Abilities_NormalDataAsset.h"
+#include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
 #include "RPGTests/Interfaces/Selectable.h"
 #include "RPGTests/Data/Entities/Entities_DataTypes.h"
 #include "ControllerMain.generated.h"
@@ -54,8 +56,9 @@ protected:
 
 	void AssignCommandTargetLocation();
 	FEntities_BaseCommandData CreateBaseCommandData();
-	void GetCommandType(EEntities_CommandTypes& CommandTypes, EEntities_MovementTypes& MovementTypes, uint8& HasNavigation) const;
-	void GetSourceLocation(FVector& SourceLocation);
+	void GetCommandType(EEntities_CommandTypes& CommandTypes, EEntities_MovementTypes& MovementTypes) const;
+	void GetSourceLocation(FVector& SourceLocation) const;
+	bool IsSourceInAbilityReach() const;
 	UCommandBase* CreateCommand(const FEntities_BaseCommandData& BaseCommandData);
 	void UpdateCommandData(const FEntities_BaseCommandData& BaseCommandData, FEntities_CommandData& CommandData, const bool Preview = false);
 	void GetCommandNavigationData(FEntities_CommandData& CommandData) const;
@@ -63,7 +66,7 @@ protected:
 	void StartUpdatingAbility();
 	void UpdateAbility();
 	void EndUpdatingAbility();
-
+	void GetAbilityMovementPosition(FVector& TerrainPosition);
 	void ExecuteAbility();
 
 	UPROPERTY()
@@ -82,12 +85,14 @@ protected:
 	void HandleHighlight(const bool bHighlight);
 	void HandleSelected(const bool bSelect);
 	void ClearHitSelectable();
-
+	UAbilities_NormalDataAsset* GetAbilityDataAsset() const;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Map Data", meta = (AllowedTypes = "MapData"))
     	FPrimaryAssetId MapData;
 
 private:
 
+	
 	UPROPERTY()
 	FVector SelectStartWorldLocation;
 

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Entities_DataTypes.h"
+#include "Entities_StatsDataTypes.h"
 #include "Engine/DataAsset.h"
 #include "Entities_DataAssetMain.generated.h"
 
@@ -45,7 +46,19 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Configuration)
 	float MaxSpeed;
-
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Stats)
+	TMap<FGameplayTag, float> BaseStats;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Stats)
+	TArray<FStatModifier> StartingModifier;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Stats)
+	FGameplayTagContainer AvailableStats;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Stats)
+	TArray<FStatScalingRule> EntityScalingRule;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Spawn)
 	int BaseSpawnWeight;
 

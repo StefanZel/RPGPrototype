@@ -49,7 +49,7 @@ void AEntities_AiControllerCommand::ExecuteCommand(UCommandBase* Command)
 	ActiveCommand = Command;
 	if (ActiveCommand != nullptr)
 	{
-		if(ActiveCommand->Data.HasNavigation)
+		if(ActiveCommand->Data.HasNavigation())
 		{ 
 			ExecuteMovement();
 		}
@@ -63,28 +63,34 @@ void AEntities_AiControllerCommand::CompleteCurrentCommand(const EEntities_Comma
 
 void AEntities_AiControllerCommand::ExecuteMovement()
 {
-	if (GetPawn()) 
+	if(!GetPawn() || !ActiveCommand) return;
+	
+	if (ActiveCommand->Data.CommandType == EEntities_CommandTypes::Ability)
 	{
-		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+	
+		GetPawn()->SetActorRotation(ActiveCommand->Data.GetRotation());
 
+		return;
+	}
 
-		if (NavSystem)
+	UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+	if (!NavSystem) return;
+
+	FNavLocation NavLocation;
+
+	if (NavSystem->ProjectPointToNavigation(ActiveCommand->Data.GetLocation(), NavLocation))
+	{
+		EPathFollowingRequestResult::Type Result = MoveToLocation(NavLocation.Location);
+		
+		if (Result == EPathFollowingRequestResult::Type::AlreadyAtGoal)
 		{
-			FNavLocation NavLocation;
-
-			if (NavSystem->ProjectPointToNavigation(ActiveCommand->Data.GetLocation(), NavLocation))
-			{
-				EPathFollowingRequestResult::Type Result = MoveToLocation(NavLocation.Location);
-
-				if (Result == EPathFollowingRequestResult::Type::Failed)
-				{
-					UE_LOG(LogTemp, Warning, TEXT("Failed to move to destination!"));
-				}
-				else if (Result == EPathFollowingRequestResult::Type::AlreadyAtGoal)
-				{
-					UE_LOG(LogTemp, Log, TEXT("Already at the destination!"));
-				}
-			}
+			UE_LOG(LogTemp, Log, TEXT("Already at the destination!"));
 		}
+		
+		if (Result == EPathFollowingRequestResult::Type::Failed)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Failed to move to destination!"));
+		}
+		
 	}
 }

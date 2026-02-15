@@ -8,6 +8,8 @@
 #include "RPGTests/Component/Entities_DecalComponent.h"
 #include "DrawDebugHelpers.h"
 #include "Blueprint/WidgetLayoutLibrary.h"
+#include "Engine/AssetManager.h"
+#include "RPGTests/Component/Entities_StatComponent.h"
 
 
 AControllerMain::AControllerMain(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -78,6 +80,11 @@ void AControllerMain::Select()
 	if (HitSelectable)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Selected Actor is %s"), *HitSelectable->GetName());
+		
+		if (UEntities_StatComponent* StatComponent = UEntities_StatComponent::FindEntityStatComponent(HitSelectable))
+		{
+			StatComponent->DebugDumpStats();
+		}
 	}
 	HandleSelected(true);
 }
@@ -132,48 +139,110 @@ FEntities_BaseCommandData AControllerMain::CreateBaseCommandData()
 {
 	EEntities_CommandTypes CommandTypes = EEntities_CommandTypes::None;
 	EEntities_MovementTypes MovementTypes = EEntities_MovementTypes::None;
-	uint8 HasNavigation = false;
 
-	GetCommandType(CommandTypes, MovementTypes, HasNavigation);
-
-	FVector MouseLocation = FVector::ZeroVector;
-	GetMousePositionOnTerrain(MouseLocation);
+	GetCommandType(CommandTypes, MovementTypes);
 
 	FVector SourceLocation = FVector::ZeroVector;
 	GetSourceLocation(SourceLocation);
+	
+	FVector MoveLocation = SourceLocation;
+	
+	switch (CommandTypes)
+	{
+		case EEntities_CommandTypes::Navigation:
+			GetMousePositionOnTerrain(MoveLocation);
+			break;
+		case EEntities_CommandTypes::Ability:
+			MoveLocation = SourceLocation;
+			break;
+		case EEntities_CommandTypes::AbilityNavigation:
+			GetAbilityMovementPosition(MoveLocation);
+			break;
+			
+		default: break;
+	}
+	
+	FVector FacePoint = (CommandTypes == EEntities_CommandTypes::Navigation) ? MoveLocation : AbilityPosition;
+	FVector LookDirection = FacePoint - SourceLocation;
+	
+	FVector LookAtTarget = (CommandTypes == EEntities_CommandTypes::AbilityNavigation || 
+							CommandTypes == EEntities_CommandTypes::Ability) 
+							? AbilityPosition
+							: MoveLocation;
+	
+	FRotator TargetRotation;
+	if (!LookDirection.IsNearlyZero())
+	{
+		TargetRotation = LookDirection.Rotation();
+	}
+	else
+	{
+		TargetRotation = HitSelectable ? HitSelectable->GetActorRotation() : FRotator::ZeroRotator;
+	}
 
+	TargetRotation.Pitch = 0.f;
+	TargetRotation.Roll = 0.f;
+	
+	/*const FVector TargetLocation = CommandState > ECommandState::None ? MovementLocation : MoveLocation;
+	const FRotator TargetRotation = (MoveLocation - LookAtTarget).Length() > 150.f
+		? FRotationMatrix::MakeFromX(MoveLocation - LookAtTarget).Rotator()
+		: FRotationMatrix::MakeFromX(LookAtTarget - SourceLocation).Rotator();*/
 
-
-	const FVector TargetLocation = CommandState > ECommandState::None ? MovementLocation : MouseLocation;
-
-	const FRotator TargetRotation = (MouseLocation - TargetLocation).Length() > 150.f
-		? FRotationMatrix::MakeFromX(MouseLocation - TargetLocation).Rotator()
-		: FRotationMatrix::MakeFromX(TargetLocation - SourceLocation).Rotator();
-
-	FEntities_BaseCommandData BaseCommandData = FEntities_BaseCommandData(CommandTypes, MovementTypes, HasNavigation);
-	BaseCommandData.SetTargetLocation(TargetLocation);
+	FEntities_BaseCommandData BaseCommandData = FEntities_BaseCommandData(CommandTypes, MovementTypes);
+	BaseCommandData.SetTargetLocation(MoveLocation);
 	BaseCommandData.SetTargetRotation(TargetRotation);
 	BaseCommandData.SetSourceLocation(SourceLocation);
 
 	return BaseCommandData;
 }
 
-void AControllerMain::GetCommandType(EEntities_CommandTypes& CommandTypes, EEntities_MovementTypes& MovementTypes, uint8& HasNavigation) const
+void AControllerMain::GetCommandType(EEntities_CommandTypes& CommandTypes, EEntities_MovementTypes& MovementTypes) const
 {
-	if (HitSelectable)
+	CommandTypes = EEntities_CommandTypes::None;
+	MovementTypes = EEntities_MovementTypes::None;
+	
+	if (!HitSelectable) return;
+	
+	if (AbilitySelected.IsValid())
 	{
-		CommandTypes = EEntities_CommandTypes::Navigation;
-		MovementTypes = EEntities_MovementTypes::NavigateTo;
-		HasNavigation = true;	
+		if (const UAbilities_NormalDataAsset* AbilityData = GetAbilityDataAsset())
+		{
+			const bool bIsStatic = AbilityData->AbilityMovement == EEntities_MovementTypes::None;
+			
+			CommandTypes = bIsStatic ? EEntities_CommandTypes::Ability : EEntities_CommandTypes::AbilityNavigation;
+			MovementTypes = AbilityData->AbilityMovement;
+			if (IsSourceInAbilityReach())
+			{
+				CommandTypes = EEntities_CommandTypes::Ability;
+				MovementTypes = EEntities_MovementTypes::RotateTo;
+			}
+			return;
+		}
 	}
+	CommandTypes = EEntities_CommandTypes::Navigation;
+	MovementTypes = EEntities_MovementTypes::NavigateTo;
 }
 
-void AControllerMain::GetSourceLocation(FVector& SourceLocation)
+void AControllerMain::GetSourceLocation(FVector& SourceLocation) const
 {
 	if (HitSelectable != nullptr)
 	{
 		SourceLocation = HitSelectable->GetActorLocation();
 	}
+}
+
+bool AControllerMain::IsSourceInAbilityReach() const
+{
+	const UAbilities_NormalDataAsset* AbilityData = GetAbilityDataAsset();
+	if (!AbilityData) return false;
+	
+	FVector SourceLocation;
+	GetSourceLocation(SourceLocation);
+	
+	float Distance = FVector::DistSquared(SourceLocation, AbilityPosition);
+	float Reach  = FMath::Square(AbilityData->Reach);
+	
+	return Distance <= Reach;
 }
 
 UCommandBase* AControllerMain::CreateCommand(const FEntities_BaseCommandData& BaseCommandData)
@@ -184,7 +253,6 @@ UCommandBase* AControllerMain::CreateCommand(const FEntities_BaseCommandData& Ba
 		{
 			if (UEntities_DataAssetMain* EntityData = Entity->GetData())
 			{
-				// TODO: This check is pointless, delete it
 				if (const TSoftClassPtr<UCommandBase>* CommandClassPtr = EntityData->Commands.Find(BaseCommandData.CommandType))
 				{
 					if (UCommandBase* NewCommand = NewObject<UCommandBase>(this, CommandClassPtr->LoadSynchronous()))
@@ -219,7 +287,7 @@ void AControllerMain::UpdateCommandData(const FEntities_BaseCommandData& BaseCom
 		CommandData.TargetActor = EnemySelected;
 	}
 
-	if (CommandData.HasNavigation)
+	if (CommandData.HasNavigation())
 	{
 		GetCommandNavigationData(CommandData);
 	}
@@ -255,18 +323,45 @@ void AControllerMain::EndUpdatingAbility()
 	GetWorld()->GetTimerManager().ClearTimer(HandleAbilityUpdate);
 }
 
+void AControllerMain::GetAbilityMovementPosition(FVector& TerrainPosition)
+{
+	if (const UAbilities_NormalDataAsset* AbilityData = GetAbilityDataAsset())
+	{
+		FVector SourceLocation;
+		GetSourceLocation(SourceLocation);
+		
+		if (IsSourceInAbilityReach())
+		{
+			TerrainPosition = SourceLocation;
+			return;
+		}
+		
+		FVector DirectionToSource = (SourceLocation - AbilityPosition).GetSafeNormal2D();
+		if (DirectionToSource.IsNearlyZero()) { DirectionToSource = FVector::ForwardVector; }
+		TerrainPosition = AbilityPosition + (DirectionToSource * AbilityData->Reach);
+	}
+}
+
 void AControllerMain::ExecuteAbility()
 {
 
 	UEntities_AbilityComponent* AbilityComponent = UEntities_AbilityComponent::FindEntityAbilityComponent(HitSelectable);
-	
+
+	EndUpdatingAbility();
+
+	const FEntities_BaseCommandData BaseCommandData = CreateBaseCommandData();
+
+	if (UCommandBase* NewCommand = CreateCommand(BaseCommandData))
+	{
+		NewCommand->Execute();
+	}
+
 	TArray<AActor*> AbilityTargets;
 	
 	AbilityComponent->ExecuteAbility(AbilityTargets);
-
+	
 	AbilitySelected = FPrimaryAssetId();
 
-	EndUpdatingAbility();
 }
 
 void AControllerMain::CommandHistory(const FGuid Id, const bool Success)
@@ -329,6 +424,20 @@ void AControllerMain::ClearHitSelectable()
 	if(HitSelectable != nullptr)
 	{
 		HitSelectable = nullptr;
+	}
+}
+
+UAbilities_NormalDataAsset* AControllerMain::GetAbilityDataAsset() const
+{
+	const UAssetManager* AssetManager = UAssetManager::GetIfInitialized();
+
+	if (AbilitySelected.IsValid() || AssetManager)
+	{
+		return Cast<UAbilities_NormalDataAsset>(AssetManager->GetPrimaryAssetObject(AbilitySelected));
+	}
+	else
+	{
+		return nullptr;
 	}
 }
 

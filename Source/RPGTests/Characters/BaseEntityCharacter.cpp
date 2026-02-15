@@ -13,18 +13,25 @@ ABaseEntityCharacter::ABaseEntityCharacter(const FObjectInitializer& ObjectIniti
 
 	PrimaryActorTick.bCanEverTick = true;
 
+	bUseControllerRotationYaw = true;
+	bUseControllerRotationPitch = false;
+	bUseControllerRotationRoll = false;
+
 	CharacterMoveComponent = GetCharacterMovement();
+
 
 	if (CharacterMoveComponent)
 	{
 		CharacterMoveComponent->SetMovementMode(EMovementMode::MOVE_Walking);
-		CharacterMoveComponent->bOrientRotationToMovement = true;
+		CharacterMoveComponent->bOrientRotationToMovement = false;
+		CharacterMoveComponent->bUseControllerDesiredRotation = true;
 		CharacterMoveComponent->RotationRate = FRotator(0.f, 640.f, 0.f);
 		CharacterMoveComponent->bConstrainToPlane = true;
 		CharacterMoveComponent->bSnapToPlaneAtStart = true;
 		CharacterMoveComponent->bUseFlatBaseForFloorChecks = true;
 		CharacterMoveComponent->GravityScale = 1.f;
 	}
+
 
 }
 

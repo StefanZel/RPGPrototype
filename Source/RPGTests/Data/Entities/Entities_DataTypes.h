@@ -36,7 +36,8 @@ UENUM()
 enum class EEntities_MovementTypes : uint8
 {
 	None,
-	NavigateTo
+	NavigateTo,
+	RotateTo
 	// This will containt commands such as sneak, dash, jump, attack, etc.
 };
 
@@ -114,15 +115,13 @@ public:
 	FEntities_BaseCommandData() :
 		CommandType(EEntities_CommandTypes::None),
 		MovementType(EEntities_MovementTypes::None),
-		HasNavigation(false),
 		TargetTransform(FTransform::Identity),
 		SourceTransform(FTransform::Identity)
 	{}
 
-	FEntities_BaseCommandData(const EEntities_CommandTypes InCmdType, const EEntities_MovementTypes InNvgType, const uint8 HasNavigation) :
+	FEntities_BaseCommandData(const EEntities_CommandTypes InCmdType, const EEntities_MovementTypes InNvgType) :
 		CommandType(InCmdType),
 		MovementType(InNvgType),
-		HasNavigation(HasNavigation),
 		TargetTransform(FTransform::Identity),
 		SourceTransform(FTransform::Identity)
 	{}
@@ -137,9 +136,6 @@ public:
 
 	UPROPERTY()
 	EEntities_MovementTypes MovementType;
-
-	UPROPERTY()
-	uint8 HasNavigation : 1;
 
 	UPROPERTY()
 	FTransform TargetTransform;
@@ -193,12 +189,12 @@ public:
 		SourceTransform(FTransform::Identity),
 		SourceActor(nullptr),
 		TargetActor(nullptr),
-		HasNavigation(false),
 		Navigation(FEntities_Navigation())
 	{}
 
-	bool IsValid() const { return MovementType != EEntities_MovementTypes::None; }
+	//bool IsValid() const { return MovementType != EEntities_MovementTypes::None; }
 	void ApplyBaseData(const FEntities_BaseCommandData& BaseData);
+	bool HasNavigation() const { return MovementType != EEntities_MovementTypes::None; }
 	FVector GetLocation() const { return TargetTransform.GetLocation(); }
 	FRotator GetRotation() const { return TargetTransform.GetRotation().Rotator(); }
 
@@ -225,9 +221,6 @@ public:
 
 	UPROPERTY()
 	AActor* TargetActor;
-
-	UPROPERTY()
-	uint8 HasNavigation : 1;
 
 	UPROPERTY()
 	FEntities_Navigation Navigation;

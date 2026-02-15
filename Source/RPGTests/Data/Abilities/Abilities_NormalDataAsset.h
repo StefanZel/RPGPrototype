@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Abilities_DataTypes.h"
+#include "RPGTests/Data/Entities/Entities_DataTypes.h"
 #include "Engine/DataAsset.h"
 #include "NiagaraSystem.h"
 #include "Abilities_NormalDataAsset.generated.h"
@@ -46,6 +47,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
 	EAbilities_Elements Element;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
+	EEntities_MovementTypes AbilityMovement;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
+	float Reach;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
 	float XRange;

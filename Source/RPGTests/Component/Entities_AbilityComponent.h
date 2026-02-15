@@ -11,12 +11,12 @@
  * 
  */
 UCLASS()
-class RPGTESTS_API UEntities_AbilityComponent : public UEntities_Component
+class RPGTESTS_API UEntities_AbilityComponent : public UActorComponent
 {
 	GENERATED_BODY()
 public:
 	UEntities_AbilityComponent(const FObjectInitializer& ObjectInitializer);
-	void Initialize(const FPrimaryAssetId& NewEntityDataAsset, const int32 NewEntityIndex) override;
+	void Initialize(const FPrimaryAssetId& NewEntityAssetId);
 
 	UFUNCTION()
 	static UEntities_AbilityComponent* FindEntityAbilityComponent(const AActor* Entity) { return (Entity ? Entity->FindComponentByClass<UEntities_AbilityComponent>() : nullptr); }
@@ -30,10 +30,15 @@ private:
 	void SetAbilityDataAssets();
 	bool IsAbilityValid() const;
 
+	UEntities_DataAssetMain* GetEntityData() const;
 	UAbilities_NormalDataAsset* GetAbilityData() const;
 	float GetAbilityRange();
+	
 	UPROPERTY()
 	TArray<FPrimaryAssetId> AvailableAbilityDataAssets;
+	
+	UPROPERTY()
+	FPrimaryAssetId EntityAssetId;
 
 	UPROPERTY()
 	FPrimaryAssetId SelectedAbility;

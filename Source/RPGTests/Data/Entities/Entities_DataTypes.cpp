@@ -7,5 +7,4 @@ void FEntities_CommandData::ApplyBaseData(const FEntities_BaseCommandData& BaseD
 	TargetTransform = BaseData.TargetTransform;
 	CommandType = BaseData.CommandType;
 	MovementType = BaseData.MovementType;
-	HasNavigation = BaseData.HasNavigation;
 }
