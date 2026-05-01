@@ -92,6 +92,9 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mapping Context|Default")
 	UInputAction* Command;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mapping Context|Default")
+	UInputAction* CharacterSheet;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Ability Selection")
 	TArray<FAbilityInputData> AbilityInput;

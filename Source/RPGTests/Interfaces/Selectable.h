@@ -33,6 +33,9 @@ public:
 
 	UFUNCTION()
 	virtual void CommandMoveEnd() = 0;
+	
+	UFUNCTION()
+	virtual void ToggleCharacterSheet() = 0;
 
 	UFUNCTION()
 	virtual void SelectAbility(int32 AbilitySlot) = 0;

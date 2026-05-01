@@ -30,6 +30,18 @@ enum class EModifierStacking : uint8
 };
 
 
+USTRUCT()
+struct FStatLimits
+{
+	GENERATED_BODY()
+	
+	float MinValue = 0.f;
+	float SoftCap = 0.f;
+	float HardCap = 0.f;
+	bool bCanExceedSoftCap = true;
+};
+
+
 USTRUCT(BlueprintType)
 struct FStatModifier
 {
@@ -126,6 +138,11 @@ struct FModifierBuckets
 	
 	TMap<FGameplayTag, float> ConvertFrom;
 	
+	float SoftCap = 0.f;
+	float HardCap = 0.f;
+	float MinValue = 0.f;
+	bool bCanExceedSoftCap = true;
+	
 	void Reset()
 	{
 		Base = 0.f;
@@ -138,14 +155,24 @@ struct FModifierBuckets
 		ConvertFrom.Empty();
 	}
 	
-	float CalculateFinal() const
+	float CalculateFinal(const FStatLimits& Limits) const
 	{
 		if (OverrideValue.IsSet())
 		{
-			return OverrideValue.GetValue();
+			float Val = OverrideValue.GetValue();
+			if (Limits.HardCap > 0.f) Val = FMath::Min(Val, Limits.HardCap);
+			return FMath::Max(Val, Limits.MinValue);
 		}
 		
 		float AdditiveFactor = FMath::Max(0.f, 1.f + (IncreasedTotal - ReducedTotal) / 100.f);
+		
+		// TODO: This is some nonsense for now, will come back to this later.
+		float PreMultiply = Base + FlatAdd;
+		if (Limits.SoftCap > 0.f && PreMultiply > Limits.SoftCap)
+		{
+			const float AboveCap = PreMultiply - Limits.SoftCap;
+			PreMultiply = Limits.SoftCap + AboveCap * 0.33f;
+		}
 		
 		float MultiplicativeFactor = 1.f;
 		for (float More : MoreMultipliers)
@@ -157,8 +184,13 @@ struct FModifierBuckets
 		{
 			MultiplicativeFactor *= (1.f - (Less / 100.f));
 		}
+		float Result = PreMultiply * AdditiveFactor * MultiplicativeFactor;
 		
-		return (Base + FlatAdd) * AdditiveFactor * MultiplicativeFactor;
+		if (Limits.HardCap > 0.f)
+		{
+			Result = FMath::Min(Result, Limits.HardCap);
+		}
+		return FMath::Max(Result, Limits.MinValue);
 		
 	}
 };
@@ -171,40 +203,77 @@ struct FStatInstance
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentValue = 0.f;
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly)
 	float BaseValue = 0.f;
-	
+
 	UPROPERTY()
-	float MinValue = 0.f;
-	
-	UPROPERTY()
-	float MaxValue = 100.f;
-	
-	UPROPERTY()
-	bool bIsResource = false;
-	
-	UPROPERTY()
-	FGameplayTag LinkedBaseStat;
-	
-	UPROPERTY()
-	FGameplayTag LinkedCurrentStat;
+	FStatLimits Limits;
 	
 	UPROPERTY()
 	FModifierBuckets Buckets;
 
-	void Initialize(float InBaseValue, float InMin = 0.f, float InMax = 0.f, bool bInIsResource = false)
+	void Initialize(float InBaseValue, const FStatLimits& InLimits = FStatLimits())
 	{
 		BaseValue = InBaseValue;
-		MinValue = InMin;
-		MaxValue = InMax;
-		bIsResource = bInIsResource;
 		Buckets.Base = InBaseValue;
+		Limits = InLimits;
 	}
 	
 	void Recalculate()
 	{
-			CurrentValue = Buckets.CalculateFinal();
-			CurrentValue = FMath::Clamp(CurrentValue, MinValue, MaxValue);
+			CurrentValue = Buckets.CalculateFinal(Limits);
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FResourceInstance
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(BlueprintReadOnly)
+	FStatInstance Max;
+	
+	
+	UPROPERTY(BlueprintReadOnly)
+	float Current = 0.f;
+	
+	UPROPERTY()
+	float MinValue = 0.f;
+		
+	float GetPercent() const
+	{
+		return Max.CurrentValue > 0.f ? FMath::Clamp(Current / Max.CurrentValue, 0.f, 1.f) : 0.f;
+	}
+	
+	void FillToMax()
+	{
+		Current = Max.CurrentValue;
+	}
+	
+	void OnMaxChanged(float OldMax, float NewMax)
+	{
+		if (OldMax > 0.f)
+		{
+			Current = FMath::Clamp(Current * (NewMax / OldMax), MinValue, NewMax);
+		}
+		else
+		{
+			Current = NewMax;
+		}
+	}
+	
+	float ApplyDelta(float Delta)
+	{
+		const float OldCurrent = Current;
+		Current = FMath::Clamp(Current + Delta, MinValue, Max.CurrentValue);
+		return Current - OldCurrent;
+	}
+	
+	void Initialize(float InMaxValue, float InMinValue = 0.f)
+	{
+		MinValue = InMinValue;
+		Max.Initialize(InMaxValue, FStatLimits());
+		Current = InMaxValue;
 	}
 };
 
@@ -247,7 +316,6 @@ struct FStatScalingRule
 			ModifierType == Other.ModifierType;
 	}
 };
-
 USTRUCT()
 struct FStatDependencyNode 
 {

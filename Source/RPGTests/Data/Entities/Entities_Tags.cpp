@@ -123,16 +123,25 @@ namespace EntityTags
     
     namespace Ability
     {
+        
         UE_DEFINE_GAMEPLAY_TAG(Type, "Ability.Type");
-        UE_DEFINE_GAMEPLAY_TAG(TypePhysical, "Ability.Type.Physical");
-        UE_DEFINE_GAMEPLAY_TAG(TypeMagic, "Ability.Type.Magic");
-        UE_DEFINE_GAMEPLAY_TAG(TypeFire, "Ability.Type.Fire");
-        UE_DEFINE_GAMEPLAY_TAG(TypeIce, "Ability.Type.Ice");
-        UE_DEFINE_GAMEPLAY_TAG(TypeHealing, "Ability.Type.Healing");
-        UE_DEFINE_GAMEPLAY_TAG(TypeBuff, "Ability.Type.Buff");
-        UE_DEFINE_GAMEPLAY_TAG(TypeDebuff, "Ability.Type.Debuff");
-        UE_DEFINE_GAMEPLAY_TAG(TypeAura, "Ability.Type.Aura");
-        UE_DEFINE_GAMEPLAY_TAG(TypeCurse, "Ability.Type.Curse");
+        UE_DEFINE_GAMEPLAY_TAG(Use, "Ability.Use");
+        namespace Types
+        {
+            UE_DEFINE_GAMEPLAY_TAG(Melee, "Ability.Type.Melee");
+            UE_DEFINE_GAMEPLAY_TAG(Ranged, "Ability.Type.Ranged");    
+            UE_DEFINE_GAMEPLAY_TAG(Placeable, "Ability.Type.Placeable")
+        }
+        namespace Uses
+        {
+            UE_DEFINE_GAMEPLAY_TAG(Damage, "Ability.Use.Damage");
+            UE_DEFINE_GAMEPLAY_TAG(Heal, "Ability.Use.Heal");
+            UE_DEFINE_GAMEPLAY_TAG(Buff, "Ability.Use.Buff");
+            UE_DEFINE_GAMEPLAY_TAG(Debuff, "Ability.Use.Debuff");
+            UE_DEFINE_GAMEPLAY_TAG(Aura, "Ability.Use.Aura");
+            UE_DEFINE_GAMEPLAY_TAG(Curse, "Ability.Use.Curse");     
+        }
+       
     }
  
     namespace State

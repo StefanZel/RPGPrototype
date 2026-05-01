@@ -174,6 +174,19 @@ public:
 
 };
 
+USTRUCT()
+struct FEntities_Ability
+{
+	GENERATED_BODY()
+	
+	UPROPERTY()
+	FPrimaryAssetId AbilityData;
+	
+	UPROPERTY()
+	TWeakObjectPtr<AActor> AbilityPtr;
+	
+};
+
 USTRUCT(BlueprintType)
 struct FEntities_CommandData
 {
@@ -189,12 +202,14 @@ public:
 		SourceTransform(FTransform::Identity),
 		SourceActor(nullptr),
 		TargetActor(nullptr),
-		Navigation(FEntities_Navigation())
+		Navigation(FEntities_Navigation()),
+		AbilityData(FEntities_Ability())
 	{}
 
 	//bool IsValid() const { return MovementType != EEntities_MovementTypes::None; }
 	void ApplyBaseData(const FEntities_BaseCommandData& BaseData);
 	bool HasNavigation() const { return MovementType != EEntities_MovementTypes::None; }
+	bool HasAbility() const { return CommandType == EEntities_CommandTypes::Ability || CommandType == EEntities_CommandTypes::AbilityNavigation; }
 	FVector GetLocation() const { return TargetTransform.GetLocation(); }
 	FRotator GetRotation() const { return TargetTransform.GetRotation().Rotator(); }
 
@@ -224,4 +239,7 @@ public:
 
 	UPROPERTY()
 	FEntities_Navigation Navigation;
+	
+	UPROPERTY()
+	FEntities_Ability AbilityData;
 };

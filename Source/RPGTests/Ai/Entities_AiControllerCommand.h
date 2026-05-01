@@ -23,6 +23,7 @@ public:
 	void ExecuteCommand(UCommandBase* Command);
 	void CompleteCurrentCommand(const EEntities_CommandStatus Status);
 	void ExecuteMovement();
+	void ExecuteAbility();
 
 
 protected:

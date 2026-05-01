@@ -128,6 +128,26 @@ void AControllerMain::SelectAbility(int32 AbilitySlot)
 	}
 }
 
+void AControllerMain::ToggleCharacterSheet()
+{
+	if (!HitSelectable) return;
+	
+	if (!CharacterSheetWidget)
+	{
+		CharacterSheetWidget = CreateWidget<UCharacterSheetWidget>(this, CharacterSheetClass);
+	}
+	
+	if (CharacterSheetWidget->IsInViewport())
+	{
+		CharacterSheetWidget->RemoveFromParent();
+	}
+	else
+	{
+		CharacterSheetWidget->InitForActor(HitSelectable);
+		CharacterSheetWidget->AddToViewport();
+	}
+}
+
 void AControllerMain::AssignCommandTargetLocation()
 {
 	FVector MouseLocation = FVector::ZeroVector;
@@ -240,7 +260,7 @@ bool AControllerMain::IsSourceInAbilityReach() const
 	GetSourceLocation(SourceLocation);
 	
 	float Distance = FVector::DistSquared(SourceLocation, AbilityPosition);
-	float Reach  = FMath::Square(AbilityData->Reach);
+	float Reach  = FMath::Square(AbilityData->DeployParams.Reach);
 	
 	return Distance <= Reach;
 }
@@ -338,7 +358,7 @@ void AControllerMain::GetAbilityMovementPosition(FVector& TerrainPosition)
 		
 		FVector DirectionToSource = (SourceLocation - AbilityPosition).GetSafeNormal2D();
 		if (DirectionToSource.IsNearlyZero()) { DirectionToSource = FVector::ForwardVector; }
-		TerrainPosition = AbilityPosition + (DirectionToSource * AbilityData->Reach);
+		TerrainPosition = AbilityPosition + (DirectionToSource * AbilityData->DeployParams.Reach);
 	}
 }
 

@@ -53,6 +53,10 @@ void AEntities_AiControllerCommand::ExecuteCommand(UCommandBase* Command)
 		{ 
 			ExecuteMovement();
 		}
+		if (ActiveCommand->Data.HasAbility())
+		{
+			ExecuteAbility();
+		}
 	}
 }
 
@@ -93,4 +97,11 @@ void AEntities_AiControllerCommand::ExecuteMovement()
 		}
 		
 	}
+}
+
+void AEntities_AiControllerCommand::ExecuteAbility()
+{
+	if(!GetPawn() || !ActiveCommand) return;
+	
+	
 }

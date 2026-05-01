@@ -212,6 +212,15 @@ void UEntities_Component::ExecuteNavigationCommand(UCommandBase* Command)
 	AssignCommand(Command);
 }
 
+void UEntities_Component::ExecuteAbilityCommand(UCommandBase* Command)
+{
+	if(Command == nullptr) return;
+	
+	Commands.Add(Command);
+
+	AssignCommand(Command);
+}
+
 void UEntities_Component::AssignCommand(UCommandBase* Command)
 {
 	AActor* CurrentOwner = GetOwner();

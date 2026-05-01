@@ -45,7 +45,7 @@ float AAbility_Base::GetAbilityRange()
 
 	if (const UAbilities_NormalDataAsset* Data = GetAbilityData())
 	{
-		return Data->XRange;
+		return Data->DeployParams.Range;
 	}
 	return DefaultRange;
 

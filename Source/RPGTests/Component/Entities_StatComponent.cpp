@@ -2,8 +2,9 @@
 #include "Entities_StatComponent.h"
 
 #include "Engine/AssetManager.h"
-#include "Interfaces/IPluginManager.h"
 #include "RPGTests/Data/Entities/Entities_Tags.h"
+#include "RPGTests/Data/Entities/StatConfigDataAsset.h"
+#include "RPGTests/SubSystems/StatConfigSubsystem.h"
 
 
 UEntities_StatComponent::UEntities_StatComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -26,48 +27,57 @@ void UEntities_StatComponent::Initialize(const FPrimaryAssetId& NewEntityAssetId
 	ResetStats();
 	
 	InitializeBaseStats(DataAsset);
-	
+	InitializeResources(DataAsset);
 	
 	for (const FStatScalingRule& Rule : DataAsset->EntityScalingRule)
 	{
-		if (!StatInstance.Contains(Rule.TargetStat))
+		if (!StatInstance.Contains(Rule.TargetStat) && !ResourceInstance.Contains(Rule.TargetStat))
 		{
 			InitializeStat(Rule.TargetStat, 0.f);
 		}
 	}
 	
-	RegisterScalingRules(DataAsset);
-	
+	EntityScalingRules = DataAsset->EntityScalingRule;
 	BuildDependencyGraph();
 	BuildCalculationOrder();
 	
+	// TODO: Apply config modifier
+	ApplyConfigModifiers(DataAsset);
 	for (const FStatModifier& Modifier : DataAsset->StartingModifier)
 	{
 		AddModifier(Modifier);
 	}
 	
+	RecalculateConditionalModifiers();
+	
 	RecalculateAllStats();
+	
+	// TODO: This will probably make problems later
+	FillAllResources();
+	for (const auto& [Tag, Resource] : ResourceInstance)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("POST-INIT Resource %s: %.1f / %.1f"),
+			*Tag.ToString(), Resource.Current, Resource.Max.CurrentValue);
+	}
 }
 
 void UEntities_StatComponent::ResetStats()
 {
 	StatInstance.Empty();
+	ResourceInstance.Empty();
 	ActiveModifiers.Empty();
-	BaseStatValue.Empty();
-	CurrentResourceValues.Empty();
-	ModifierIndexMap.Empty();
 	CalculationOrder.Empty();
 	EntityScalingRules.Empty();
 	EntityStateTags.Reset();
+	DirtyStats.Empty();
 	
 	bGraphUpToDate = false;
+	bIsRecalculating = false;
 }
 
 float UEntities_StatComponent::GetStatValue(FGameplayTag StatTag)
 {
 	if (!StatTag.IsValid()) return 0.f;
-	
-	if (EntityTags::IsResourceCurrentTag(StatTag)) return GetCurrentResource(StatTag);
 	
 	if (DirtyStats.Contains(StatTag))
 	{
@@ -82,18 +92,39 @@ float UEntities_StatComponent::GetStatValue(FGameplayTag StatTag)
 	return 0.f;
 }
 
-float UEntities_StatComponent::GetBaseStatValue(FGameplayTag StatTag) const
+float UEntities_StatComponent::GetBaseStatValue(FGameplayTag StatTag)
 {
-	if (const float* BaseValue = BaseStatValue.Find(StatTag))
+	if (!StatTag.IsValid()) return 0.f;
+	
+	if (const FStatInstance* Instance = StatInstance.Find(StatTag))
 	{
-		return *BaseValue;
+		return Instance->BaseValue;
 	}
+	
+	if (const FResourceInstance* Resource = ResourceInstance.Find(StatTag))
+	{
+		return Resource->Max.BaseValue;
+	}
+
 	return 0.f;
 }
 
 void UEntities_StatComponent::SetBaseStatValue(FGameplayTag StatTag, float NewValue)
 {
 	if (!StatTag.IsValid()) return;
+	
+	
+	if (FResourceInstance* Resource = ResourceInstance.Find(StatTag))
+	{
+		if (!FMath::IsNearlyEqual(Resource->Max.BaseValue,NewValue))
+		{
+			Resource->Max.BaseValue = NewValue;
+			MarkStatAndDependentsDirty(StatTag);
+			RecalculateDirtyStats();
+		}
+		return;
+	}
+	
 	
 	FStatInstance* Instance = StatInstance.Find(StatTag);
 	if (!Instance)
@@ -108,13 +139,11 @@ void UEntities_StatComponent::SetBaseStatValue(FGameplayTag StatTag, float NewVa
 		if (!FMath::IsNearlyEqual(OldValue, NewValue))
 		{
 			Instance->BaseValue = NewValue;
-			BaseStatValue.Add(StatTag, NewValue);
 		
 			MarkStatAndDependentsDirty(StatTag);
-			//RecalculateStatAndDependants(StatTag);
 			RecalculateDirtyStats();
 		
-			OnStatChanged.Broadcast(StatTag, OldValue, NewValue);
+			OnStatChanged.Broadcast(StatTag, OldValue, Instance->CurrentValue);
 		}
 	}
 	
@@ -129,19 +158,11 @@ FStatInstance UEntities_StatComponent::GetStatInstance(FGameplayTag StatTag) con
 	return FStatInstance();
 }
 
-float UEntities_StatComponent::GetCurrentResource(FGameplayTag ResourceTag) const
+float UEntities_StatComponent::GetResourceCurrent(FGameplayTag ResourceTag) const
 {
-	if (!EntityTags::IsResourceCurrentTag(ResourceTag))
+	if (const FResourceInstance* Resource = ResourceInstance.Find(ResourceTag))
 	{
-		if (EntityTags::IsResourceMaxTag(ResourceTag))
-		{
-			ResourceTag = EntityTags::GetResourceCurrentTag(ResourceTag);
-		}
-	}
-	
-	if (const float* Value = CurrentResourceValues.Find(ResourceTag))
-	{
-		return *Value;
+		return Resource->Current;
 	}
 	
 	return 0.f;
@@ -149,69 +170,77 @@ float UEntities_StatComponent::GetCurrentResource(FGameplayTag ResourceTag) cons
 
 void UEntities_StatComponent::SetCurrentResource(FGameplayTag ResourceTag, float NewValue)
 {
-	if (!EntityTags::IsResourceCurrentTag(ResourceTag))
+	FResourceInstance* Resource = ResourceInstance.Find(ResourceTag);
+	if (!Resource) return;
+	
+	float OldValue = Resource->Current;
+	
+	Resource->Current = FMath::Clamp(NewValue, Resource->MinValue, Resource->Max.CurrentValue);
+	
+	if (!FMath::IsNearlyEqual(OldValue,Resource->Current))
 	{
-		if (EntityTags::IsResourceMaxTag(ResourceTag))
-		{
-			ResourceTag = EntityTags::GetResourceCurrentTag(ResourceTag);
-		}
-		else
-		{
-			return;
-		}
-	}
-	
-	
-	float OldValue = GetCurrentResource(ResourceTag);
-	float MaxValue = GetMaxResource(ResourceTag);
-	
-	NewValue = FMath::Clamp(NewValue, 0.f, MaxValue);
-	
-	// Not sure how will this behave, need to test it.
-	if (!FMath::IsNearlyEqual(OldValue,NewValue))
-	{
-		CurrentResourceValues.Add(ResourceTag, NewValue);
-		
-		if (FStatInstance* Instance = StatInstance.Find(ResourceTag))
-		{
-			Instance->CurrentValue = NewValue;
-		}
-		
-		OnStatChanged.Broadcast(ResourceTag, OldValue, NewValue);
+		OnResourceChanged.Broadcast(ResourceTag, Resource->Current, Resource->Max.CurrentValue);
 	}
 }
 
 float UEntities_StatComponent::ModifyCurrentResource(FGameplayTag ResourceTag, float Delta)
 {
-	float Current = GetCurrentResource(ResourceTag);
-	float NewValue = Current + Delta;
-	SetCurrentResource(ResourceTag, NewValue);
-	return GetCurrentResource(ResourceTag);
+	FResourceInstance* Resource = ResourceInstance.Find(ResourceTag);
+	if (!Resource) return 0.f;
+	
+	const float OldCurrent = Resource->Current;
+	Resource->ApplyDelta(Delta);
+	
+	if (!FMath::IsNearlyEqual(OldCurrent, Resource->Current))
+	{
+		OnResourceChanged.Broadcast(ResourceTag, Resource->Current, Resource->Max.CurrentValue);
+		
+		// Death check meh
+		if (ResourceTag == EntityTags::Stat::Resources::Health && Resource->Current <= 0.f)
+		{
+			RemoveStateTag(EntityTags::State::Alive);
+			AddStateTag(EntityTags::State::Dead);
+		}
+	}
+	
+	return Resource->Current;
 }
 
-float UEntities_StatComponent::GetMaxResource(FGameplayTag ResourceTag)
+float UEntities_StatComponent::GetResourceMax(FGameplayTag ResourceTag)
 {
-	FGameplayTag MaxTag;
-	
-	if (EntityTags::IsResourceCurrentTag(ResourceTag))
+	if (DirtyStats.Contains(ResourceTag))
 	{
-		MaxTag = EntityTags::GetResourceMaxTag(ResourceTag);
-	}
-	else if (EntityTags::IsResourceMaxTag(ResourceTag))
-	{
-		MaxTag = ResourceTag;
-	}
-	else
-	{
-		return 0.f;
+		RecalculateDirtyStats();
 	}
 	
-	return GetStatValue(MaxTag);
+	if (const FResourceInstance* Resource = ResourceInstance.Find(ResourceTag))
+	{
+		return Resource->Max.CurrentValue;
+	}
+	return 0.f;
 }
 
 bool UEntities_StatComponent::HasEnoughResources(FGameplayTag ResourceTag, float Amount) const
 {
-	return GetCurrentResource(ResourceTag) >= Amount;
+	return GetResourceCurrent(ResourceTag) >= Amount;
+}
+
+void UEntities_StatComponent::FillResource(FGameplayTag ResourceTag)
+{
+	FResourceInstance* Resource = ResourceInstance.Find(ResourceTag);
+	if (!Resource) return;
+	
+	Resource->FillToMax();
+	OnResourceChanged.Broadcast(ResourceTag, Resource->Current, Resource->Max.CurrentValue);
+}
+
+void UEntities_StatComponent::FillAllResources()
+{
+	for (auto& [Tag, Resource] : ResourceInstance)
+	{
+		Resource.FillToMax();
+		OnResourceChanged.Broadcast(Tag, Resource.Current, Resource.Max.CurrentValue);
+	}
 }
 
 FGuid UEntities_StatComponent::AddModifier(const FStatModifier& Modifier, int32 Duration, int32 Stacks)
@@ -225,8 +254,7 @@ FGuid UEntities_StatComponent::AddModifier(const FStatModifier& Modifier, int32 
 	NewModifier.RemainingTime = Duration;
 	NewModifier.StackCount = FMath::Max(1, Stacks);
 	
-	int32 Index = ActiveModifiers.Add(NewModifier);
-	ModifierIndexMap.Add(NewModifier.SourceId, Index);
+	ActiveModifiers.Add(NewModifier.SourceId, NewModifier);
 	
 	if (NewModifier.bIsActive)
 	{
@@ -244,33 +272,16 @@ FGuid UEntities_StatComponent::AddModifier(const FStatModifier& Modifier, int32 
 
 bool UEntities_StatComponent::RemoveModifier(FGuid ModifierId)
 {
-	if (int32* IndexPtr = ModifierIndexMap.Find(ModifierId))
+	if (FActiveModifier* ModifierPtr = ActiveModifiers.Find(ModifierId))
 	{
-		int32 Index = *IndexPtr;
-		if (ActiveModifiers.IsValidIndex(Index))
-		{
-			FActiveModifier Modifier = ActiveModifiers[Index];
-			
-			ModifierIndexMap.Remove(ModifierId);
-			ActiveModifiers.RemoveAt(Index);
-			
-			for (auto& Pair: ModifierIndexMap)
-			{
-				if (Pair.Value > Index)
-				{
-					Pair.Value--;
-				}
-			}
-			
-			RemoveModifierInternal(Modifier);
-			
-			// TODO: Handle duration timer if needed
-			OnModifierRemoved.Broadcast(Modifier);
-			
-			return true;
-		}
+		FActiveModifier Modifier = *ModifierPtr;
+		ActiveModifiers.Remove(ModifierId);
+		
+		RemoveModifierInternal(Modifier);
+		// TODO: Handle duration timer if needed
+		OnModifierRemoved.Broadcast(Modifier);
+		return true;
 	}
-	
 	return false;
 }
 
@@ -278,14 +289,14 @@ void UEntities_StatComponent::RemoveModifierBySource(const FName& SourceName)
 {
 	TArray<FGuid> ModifiersToRemove;
 	
-	for (const FActiveModifier& Modifier: ActiveModifiers)
+	for (auto& Pair: ActiveModifiers)
 	{
-		if (Modifier.Data.SourceName == SourceName)
+		if (Pair.Value.Data.SourceName == SourceName)
 		{
-			ModifiersToRemove.Add(Modifier.SourceId);
+			ModifiersToRemove.Add(Pair.Key);
 		}
 	}
-	
+
 	for (const FGuid& Id : ModifiersToRemove)
 	{
 		RemoveModifier(Id);
@@ -296,14 +307,13 @@ void UEntities_StatComponent::RemoveModifierBySourceType(FGameplayTag SourceType
 {
 	TArray<FGuid> ModifiersToRemove;
 	
-	for (const FActiveModifier& Modifier : ActiveModifiers)
+	for (auto& Pair: ActiveModifiers)
 	{
-		if (Modifier.Data.SourceType == SourceType)
+		if (Pair.Value.Data.SourceType == SourceType)
 		{
-			ModifiersToRemove.Add(Modifier.SourceId);
+			ModifiersToRemove.Add(Pair.Key);
 		}
 	}
-	
 	for (const FGuid& Id : ModifiersToRemove)
 	{
 		RemoveModifier(Id);
@@ -313,7 +323,7 @@ void UEntities_StatComponent::RemoveModifierBySourceType(FGameplayTag SourceType
 void UEntities_StatComponent::ClearAllModifiers()
 {
 	TArray<FGuid> AllModifierIds;
-	for (const auto& Pair : ModifierIndexMap)
+	for (const auto& Pair : ActiveModifiers)
 	{
 		AllModifierIds.Add(Pair.Key);
 	}
@@ -325,19 +335,43 @@ void UEntities_StatComponent::ClearAllModifiers()
 	
 }
 
+TArray<FActiveModifier> UEntities_StatComponent::GetActiveModifiers() const
+{
+	TArray<FActiveModifier> OutModifiers;
+	ActiveModifiers.GenerateValueArray(OutModifiers);
+	return OutModifiers;
+}
+
 TArray<FActiveModifier> UEntities_StatComponent::GetModifiersForStat(FGameplayTag StatTag) const
 {
 	TArray<FActiveModifier> Result;
-	
-	for (const FActiveModifier& Modifier : ActiveModifiers)
+	for (auto& Pair: ActiveModifiers)
 	{
-		if (Modifier.Data.TargetStat == StatTag)
+		if (Pair.Value.Data.TargetStat == StatTag)
 		{
-			Result.Add(Modifier);
+			Result.Add(Pair.Value);
 		}
 	}
-	
 	return Result;
+}
+
+void UEntities_StatComponent::TickModifiers(int32 ActionPointsSpent)
+{
+	TArray<FGuid> Expired;
+	
+	for (auto& [Id, Mod] : ActiveModifiers)
+	{
+		if (Mod.bIsInfinite) continue;
+		
+		Mod.RemainingTime -= ActionPointsSpent;
+		if (Mod.RemainingTime <= 0)
+			Expired.Add(Id);
+	}
+	
+	for (const FGuid& Id : Expired)
+	{
+		RemoveModifier(Id);
+	}
 }
 
 void UEntities_StatComponent::AddStateTag(FGameplayTag StateTag)
@@ -361,31 +395,6 @@ void UEntities_StatComponent::RemoveStateTag(FGameplayTag StateTag)
 bool UEntities_StatComponent::HasStateTag(FGameplayTag StateTag) const
 {
 	return EntityStateTags.HasTag(StateTag);
-}
-
-void UEntities_StatComponent::RecalculateStatAndDependants(FGameplayTag StatTag)
-{
-	if (!bGraphUpToDate)
-	{
-		BuildCalculationOrder();
-	}
-	
-	int32 StartIndex = CalculationOrder.IndexOfByKey(StatTag);
-	if (StartIndex != INDEX_NONE)
-	{
-		bIsRecalculating = true;
-		
-		for (int32 i = StartIndex; i < CalculationOrder.Num(); i++)
-		{
-			ExecuteStatCalculation(CalculationOrder[i]);
-		}
-		
-		bIsRecalculating = false;
-	}
-	else
-	{
-		RecalculateAllStats();
-	}
 }
 
 void UEntities_StatComponent::RecalculateAllStats()
@@ -429,63 +438,37 @@ void UEntities_StatComponent::DebugDumpStats()
     UE_LOG(LogTemp, Warning, TEXT("--- Calculated Stats ---"));
     for (const FGameplayTag& Tag : CalculationOrder)
     {
-        if (EntityTags::IsResourceCurrentTag(Tag)) continue;
         
+    	if (ResourceInstance.Contains(Tag)) continue;
         float FinalValue = GetStatValue(Tag);
-        float BaseVal = BaseStatValue.FindRef(Tag);
+        float BaseVal = GetBaseStatValue(Tag);
         FGameplayTag Category = EntityTags::GetStatCategory(Tag);
         
-        bool bIsMaxResource = EntityTags::IsResourceMaxTag(Tag);
         
-        UE_LOG(LogTemp, Log, TEXT("[%s] %s: %.2f (Base: %.2f) %s%s"), 
+        UE_LOG(LogTemp, Log, TEXT("[%s] %s: %.2f (Base: %.2f) %s"), 
             *Category.GetTagName().ToString().Replace(TEXT("Stat."), TEXT("")), 
             *Tag.GetTagName().ToString(), 
             FinalValue, 
             BaseVal,
-            bIsMaxResource ? TEXT("[MAX RESOURCE] ") : TEXT(""),
             !FMath::IsNearlyEqual(FinalValue, BaseVal) ? TEXT("*MODIFIED*") : TEXT(""));
     }
-
-    UE_LOG(LogTemp, Warning, TEXT("--- Resources ---"));
     
     TSet<FGameplayTag> ResourceBaseTags;
-    for (const auto& Pair : CurrentResourceValues)
-    {
-        FGameplayTag BaseTag = EntityTags::GetResourceBaseTag(Pair.Key);
-        if (BaseTag.IsValid())
-        {
-            ResourceBaseTags.Add(BaseTag);
-        }
-    }
+ 	UE_LOG(LogTemp, Warning, TEXT("--- Resources ---"));
+	for (const auto& [Tag, Resource] : ResourceInstance)
+	{
+		UE_LOG(LogTemp, Log, TEXT("%s: %.1f / %.1f (%.0f%%)"),
+			*Tag.ToString(),
+			Resource.Current,
+			Resource.Max.CurrentValue,
+			Resource.GetPercent() * 100.f);
+	}
     
-    for (FGameplayTag BaseResource : ResourceBaseTags)
-    {
-        FGameplayTag CurrentTag = FGameplayTag::EmptyTag;
-        FGameplayTag MaxTag = FGameplayTag::EmptyTag;
-        
-        FString BaseString = BaseResource.ToString();
-        FString CurrentString = BaseString + TEXT(".Current");
-        FString MaxString = BaseString + TEXT(".Max");
-        
-        CurrentTag = FGameplayTag::RequestGameplayTag(FName(*CurrentString));
-        MaxTag = FGameplayTag::RequestGameplayTag(FName(*MaxString));
-        
-        if (CurrentTag.IsValid() && MaxTag.IsValid())
-        {
-            float CurrentValue = GetCurrentResource(CurrentTag);
-            float MaxValue = GetStatValue(MaxTag); 
-            
-            UE_LOG(LogTemp, Log, TEXT("%s: %.1f / %.1f (%.0f%%)"), 
-                *BaseResource.ToString(),
-                CurrentValue, 
-                MaxValue,
-                MaxValue > 0 ? (CurrentValue / MaxValue * 100) : 0.f);
-        }
-    }
 
     UE_LOG(LogTemp, Warning, TEXT("--- Active Modifiers: %d ---"), ActiveModifiers.Num());
-    for (const FActiveModifier& Mod : ActiveModifiers)
+    for (const auto& Pair : ActiveModifiers)
     {
+    	FActiveModifier Mod = Pair.Value;
         bool bShouldBeActive = EvaluateConditionQuery(Mod.Data.ConditionQuery);
         
         UE_LOG(LogTemp, Log, TEXT(" - [%s] %s: %s %+.2f (Stacks: %d) [Active: %s, ShouldBe: %s]"), 
@@ -520,37 +503,50 @@ void UEntities_StatComponent::InitializeBaseStats(UEntities_DataAssetMain* DataA
 {
 	if (!DataAsset) return;
 	
+	const UStatConfigDataAsset* Config = GetStatConfig();
+	
+	if (Config)
+	{
+		for (const auto& [Tag, StatConf] : Config->Configs)
+		{
+			const float BaseValue = Config->ResolveBaseValue(Tag, DataAsset->BaseStats);
+			InitializeStat(Tag, BaseValue);
+		}
+	}
+	
 	for (const auto& StatPair : DataAsset->BaseStats)
 	{
 		FGameplayTag StatTag = StatPair.Key;
-		float BaseValue =  StatPair.Value;
+		if (EntityTags::IsResourceTag(StatTag)) continue;
 		
-		if (EntityTags::IsResourceTag(StatTag))
-		{
-			if (EntityTags::IsResourceBaseTag(StatTag))
-			{
-				FGameplayTag MaxTag = EntityTags::GetResourceMaxTagFromBase(StatTag);
-				FGameplayTag CurrentTag = EntityTags::GetResourceCurrentTagFromBase(StatTag);
-				
-				InitializeStat(MaxTag, BaseValue, 0.f, 0.f, true);
-				CurrentResourceValues.Add(CurrentTag, BaseValue);
-			}
-			else if (EntityTags::IsResourceMaxTag(StatTag))
-			{
-				InitializeStat(StatTag, BaseValue);	
-				
-				FGameplayTag CurrentTag = EntityTags::GetResourceCurrentTag(StatTag);
-				CurrentResourceValues.Add(CurrentTag, BaseValue);
-			}
-			else if (EntityTags::IsResourceCurrentTag(StatTag))
-			{
-				CurrentResourceValues.Add(StatTag, BaseValue);
-				
-				FGameplayTag MaxTag = EntityTags::GetResourceMaxTag(StatTag);
-				InitializeStat(MaxTag, BaseValue);
-			}
-		}
+		float BaseValue =  StatPair.Value;
+	
 		InitializeStat(StatTag, BaseValue);
+	}
+}
+
+void UEntities_StatComponent::InitializeResources(UEntities_DataAssetMain* DataAsset)
+{
+	if (!DataAsset) return;
+	
+	const UStatConfigDataAsset* Config = GetStatConfig();
+	
+	if (Config)
+	{
+		for (const auto& [Tag, ResConf] : Config->ResourceConfigs)
+		{
+			const float MaxValue = Config->ResolveResourceMaxValue(Tag, DataAsset->BaseStats);
+			InitializeResource(Tag, MaxValue);
+		}
+	}
+	
+	for (const auto& [Tag, BaseValue] : DataAsset->BaseStats)
+	{
+		if (!EntityTags::IsResourceTag(Tag)) continue;
+		if (ResourceInstance.Contains(Tag)) continue;
+		
+		FResourceInstance& Resource = ResourceInstance.FindOrAdd(Tag);
+		Resource.Initialize(BaseValue, 0.f);
 	}
 }
 
@@ -571,22 +567,31 @@ void UEntities_StatComponent::RegisterScalingRules(UEntities_DataAssetMain* Data
 	}
 }
 
+void UEntities_StatComponent::ApplyConfigModifiers(UEntities_DataAssetMain* DataAsset)
+{
+	const UStatConfigDataAsset* Config = GetStatConfig();
+	if (Config)
+	{
+		for (const auto& [Tag, ResConf] : Config->ResourceConfigs)
+		{
+			for (const FStatModifier& Mod : ResConf.GlobalModifiers)
+			{
+				AddModifier(Mod);
+			}
+		}
+		for (const auto& [Tag, StatConf] : Config->Configs)
+		{
+			for (const FStatModifier& Mod : StatConf.GlobalModifiers)
+			{
+				AddModifier(Mod);
+			}
+		}	
+	}
+}
+
 void UEntities_StatComponent::BuildDependencyGraph()
 {
 	DependencyGraph.Empty();
-	
-	for (const auto& Pair : StatInstance)
-	{
-		FGameplayTag StatTag = Pair.Key;
-		if (EntityTags::IsResourceCurrentTag(StatTag))
-		{
-			FGameplayTag MaxTag = EntityTags::GetResourceMaxTag(StatTag);
-			if (MaxTag.IsValid())
-			{
-				AddDependency(MaxTag, StatTag);
-			}
-		}
-	}
 	
 	for (const FStatScalingRule& Rule : EntityScalingRules)
 	{
@@ -601,7 +606,12 @@ void UEntities_StatComponent::BuildCalculationOrder()
 	TMap<FGameplayTag, int32> InDegree;
 	TSet<FGameplayTag> AllInvolvedTags;
 	
-	for (const auto& Pair : BaseStatValue)
+	for (const auto& Pair : StatInstance)
+	{
+		AllInvolvedTags.Add(Pair.Key);
+	}
+	
+	for (const auto& Pair : ResourceInstance)
 	{
 		AllInvolvedTags.Add(Pair.Key);
 	}
@@ -638,10 +648,10 @@ void UEntities_StatComponent::BuildCalculationOrder()
 		}
 	}
 	
-	while (Queue.Num() > 0)
+	int32 Head = 0;
+	while (Head < Queue.Num())
 	{
-		FGameplayTag Current = Queue[0];
-		Queue.RemoveAt(0);
+		FGameplayTag Current = Queue[Head++];
 		
 		CalculationOrder.Add(Current);
 		if (const FStatDependencyNode* Node = DependencyGraph.Find(Current))
@@ -681,81 +691,78 @@ void UEntities_StatComponent::ExecuteStatCalculation(FGameplayTag StatTag)
 	
 	DirtyStats.Remove(StatTag);
 	
-	FStatInstance* Instance = StatInstance.Find(StatTag);
-	if (!Instance)
+	FStatInstance* StatInst = nullptr;;
+	FResourceInstance* ResourceInst = ResourceInstance.Find(StatTag);
+	if (ResourceInst)
 	{
-		InitializeStat(StatTag, 0.f);
-		Instance = StatInstance.Find(StatTag);
-		if (!Instance) return;
+		StatInst = &ResourceInst->Max;
+	}
+	else
+	{
+		StatInst = StatInstance.Find(StatTag);
+		if (!StatInst)
+		{
+			InitializeStat(StatTag, 0.f);
+			StatInst = StatInstance.Find(StatTag);
+			if (!StatInst) return;
+		}
 	}
 	
 	FModifierBuckets Buckets;
-	Buckets.Base = BaseStatValue.FindRef(StatTag);
+	Buckets.Base = GetBaseStatValue(StatTag);
 	
 	if (const FStatDependencyNode* Node = DependencyGraph.Find(StatTag))
 	{
 		for (const FStatScalingRule& Rule : Node->ScalingRules)
 		{
-			float SourceValue = GetStatValue(Rule.SourceStat);
+			float SourceValue = 0.f;
+			if (StatInstance.Contains(Rule.SourceStat))
+			{
+				SourceValue = GetStatValue(Rule.SourceStat);
+			}
+			else if (ResourceInstance.Contains(Rule.SourceStat))
+			{
+				SourceValue = GetResourceMax(Rule.SourceStat);
+			}
 			float Bonus = Rule.BaseValue + (SourceValue * Rule.ScalePerUnit);
 			
 			ApplyModifierToBucket(Buckets, Rule.ModifierType, Bonus);
 		}
 	}
+
 	
 	GatherModifiersFromStat(StatTag, Buckets);
 	
-	float OldValue = Instance->CurrentValue;
+	const float OldValue = StatInst->CurrentValue;
 	
-	Instance->Buckets = Buckets;
-	Instance->Recalculate();
-	
-	float NewValue = Instance->CurrentValue;
+	StatInst->Buckets = Buckets;
+	StatInst->Recalculate();
+	const float NewValue = StatInst->CurrentValue;
 
-	if (EntityTags::IsResourceMaxTag(StatTag))
-	{
-	RecalculateCurrentStat(StatTag, NewValue, OldValue);
-	}
 	
 	if (!FMath::IsNearlyEqual(OldValue, NewValue))
 	{
-		OnStatChanged.Broadcast(StatTag, OldValue, NewValue);
+		if (ResourceInst)
+		{
+			OnResourceMaxChanged(StatTag, OldValue, NewValue);
+		}
+		else
+		{
+			OnStatChanged.Broadcast(StatTag, OldValue, NewValue);
+		}
 	}
 	
 }
 
-/*void UEntities_StatComponent::RecalculateStatFrom(FGameplayTag StartStatTag)
-{
-	if (!bGraphUpToDate)
-	{
-		BuildCalculationOrder();
-	}
-	
-	int32 StartIndex = CalculationOrder.IndexOfByKey(StartStatTag);
-	if (StartIndex != INDEX_NONE)
-	{
-		bIsRecalculating = true;
-		for (int32 i = StartIndex; i < CalculationOrder.Num(); i++)
-		{
-			ExecuteStatCalculation(CalculationOrder[i]);
-		}
-		bIsRecalculating = false;
-	}
-	else
-	{
-		RecalculateAllStats();
-	}
-}*/
-
 void UEntities_StatComponent::GatherModifiersFromStat(FGameplayTag StatTag, FModifierBuckets& OutBuckets)
 {
-	if (EntityTags::IsResourceCurrentTag(StatTag)) return;
-	
+
 	TMap<EStatModifierType, TArray<FStatModifier>> ModifiersByType;
 	TMap<FGameplayTag, float> ConvertedValues;
 	
-	for (const FActiveModifier& Modifier : ActiveModifiers)
+	for (const auto& Pair : ActiveModifiers)
 	{
+		const FActiveModifier& Modifier = Pair.Value;
 		if (!Modifier.bIsActive || Modifier.Data.TargetStat != StatTag) continue;
 		
 		if (Modifier.Data.ModType == EStatModifierType::Convert)
@@ -832,31 +839,14 @@ void UEntities_StatComponent::GatherModifiersFromStat(FGameplayTag StatTag, FMod
 	
 }
 
-void UEntities_StatComponent::RecalculateCurrentStat(const FGameplayTag& StatTag, float NewValue, float OldMax)
+void UEntities_StatComponent::OnResourceMaxChanged(const FGameplayTag& ResourceTag, float OldMax, float NewMax)
 {
-	if (!EntityTags::IsResourceMaxTag(StatTag)) return;
+	FResourceInstance* Resource = ResourceInstance.Find(ResourceTag);
+	if (!Resource) return;
 	
-	FGameplayTag CurrentTag = EntityTags::GetResourceCurrentTag(StatTag);
+	Resource->OnMaxChanged(OldMax, NewMax);
 	
-	float* CurrentValue = CurrentResourceValues.Find(CurrentTag);
-	if (!CurrentValue) return;
-
-	if (OldMax <= 0.f || FMath::IsNearlyZero(OldMax))
-	{
-		*CurrentValue = NewValue;
-	}
-	else
-	{
-		float Ratio = FMath::Clamp(*CurrentValue / OldMax, 0.f, 1.f);
-		*CurrentValue = FMath::Clamp(Ratio * NewValue, 0.f, NewValue);
-	}
-	
-	if (FStatInstance* CurrentInstance = StatInstance.Find(CurrentTag))
-	{
-		CurrentInstance->CurrentValue = *CurrentValue;
-	}
-
-	
+	OnResourceChanged.Broadcast(ResourceTag, Resource->Current, NewMax);
 }
 
 bool UEntities_StatComponent::EvaluateConditionQuery(const FGameplayTagQuery& Query) const
@@ -900,14 +890,14 @@ void UEntities_StatComponent::ApplyModifierToBucket(FModifierBuckets& Buckets, E
 void UEntities_StatComponent::ApplyModifierInternal(const FActiveModifier& Modifier)
 {
 	MarkStatAndDependentsDirty(Modifier.Data.TargetStat);
-	RecalculateDirtyStats();
+	//RecalculateDirtyStats();
 	//RecalculateStatFrom(Modifier.Data.TargetStat);
 }
 
 void UEntities_StatComponent::RemoveModifierInternal(const FActiveModifier& Modifier)
 {
 	MarkStatAndDependentsDirty(Modifier.Data.TargetStat);
-	RecalculateDirtyStats();
+	//RecalculateDirtyStats();
 	//RecalculateStatFrom(Modifier.Data.TargetStat);
 }
 
@@ -920,8 +910,9 @@ void UEntities_StatComponent::RecalculateConditionalModifiers()
 {
 	bool bAnyChanged = false;
 	
-	for (FActiveModifier& Modifier : ActiveModifiers)
+	for (auto& Pair : ActiveModifiers)
 	{
+		FActiveModifier& Modifier = Pair.Value;
 		bool bShouldBeActive = EvaluateConditionQuery(Modifier.Data.ConditionQuery);
 		
 		if (Modifier.bIsActive != bShouldBeActive)
@@ -1002,10 +993,10 @@ void UEntities_StatComponent::PropagateDirtyFlags(FGameplayTag StatTag)
 	TArray<FGameplayTag> ToProcess;
 	ToProcess.Add(StatTag);
 	
-	while (ToProcess.Num() > 0)
+	int32 Head = 0;
+	while (Head < ToProcess.Num())
 	{
-		FGameplayTag Current = ToProcess[0];
-		ToProcess.RemoveAt(0);
+		FGameplayTag Current = ToProcess[Head++];
 		
 		DirtyStats.Add(Current);
 		
@@ -1025,6 +1016,9 @@ void UEntities_StatComponent::PropagateDirtyFlags(FGameplayTag StatTag)
 void UEntities_StatComponent::RecalculateDirtyStats()
 {
 	if (DirtyStats.Num() == 0 ) return;
+	if (bIsRecalculating) return;
+	bIsRecalculating = true;
+	
 	
 	if (!bGraphUpToDate)
 	{
@@ -1043,45 +1037,63 @@ void UEntities_StatComponent::RecalculateDirtyStats()
 	bIsRecalculating = false;
 }
 
-void UEntities_StatComponent::InitializeStat(FGameplayTag StatTag, float BaseValue, float MinValue, float MaxValue,
-                                             bool bIsResource)
+void UEntities_StatComponent::InitializeStat(FGameplayTag StatTag, float BaseValue)
 {
-	if (EntityTags::IsResourceCurrentTag(StatTag))
+	if (EntityTags::IsResourceTag(StatTag))
 	{
 		return;
 	}
-	if (EntityTags::IsResourceMaxTag(StatTag))
-	{
-		bIsResource = true;
-	}
-	else if (EntityTags::IsResourceBaseTag(StatTag))
-	{
-		bIsResource = true;
-		StatTag = EntityTags::GetResourceMaxTagFromBase(StatTag);
-	}
+	FStatLimits Limits;
 	
-	BaseStatValue.Add(StatTag, BaseValue);
+	if (const UStatConfigDataAsset* Config = GetStatConfig())
+	{
+		if (const FStatConfig* StatConfig = Config->GetConfig(StatTag))
+		{
+			Limits.SoftCap = StatConfig->SoftCap;
+			Limits.HardCap = StatConfig->HardCap;
+			Limits.MinValue = StatConfig->MinValue;
+			Limits.bCanExceedSoftCap = StatConfig->bCanExceedSoftCap;
+		}
+	}
 	
 	FStatInstance& Instance = StatInstance.FindOrAdd(StatTag);
-	Instance.Initialize(BaseValue, MinValue, MaxValue, bIsResource);
-	
-	if (bIsResource)
+	Instance.Initialize(BaseValue, Limits);
+}
+
+void UEntities_StatComponent::InitializeResource(FGameplayTag StatTag, float MaxValue)
+{
+	if (!EntityTags::IsResourceTag(StatTag))
 	{
-		Instance.LinkedBaseStat = EntityTags::GetResourceBaseTag(StatTag);
-		Instance.LinkedCurrentStat = EntityTags::GetResourceCurrentTag(StatTag);
+		return;
+	}
+	FStatLimits Limits;
+
+	if (const UStatConfigDataAsset* Config = GetStatConfig())
+	{
+		if (const FResourceConfig* ResourceConfig = Config->GetResourceConfig(StatTag))
+		{
+			Limits.SoftCap = ResourceConfig->SoftCap;
+			Limits.HardCap = ResourceConfig->HardCap;
+			Limits.MinValue = ResourceConfig->MinValue;
+			Limits.bCanExceedSoftCap = ResourceConfig->bCanExceedSoftCap;
+		}
 	}
 	
+	FResourceInstance& Resource = ResourceInstance.FindOrAdd(StatTag);
+	Resource.Initialize(MaxValue, Limits.MinValue);
+	Resource.Max.Limits = Limits;
 }
 
 void UEntities_StatComponent::ValidateStatInstance()
 {
-	for (const auto& Pair : BaseStatValue)
+	// TODO: This is nonsense
+	/*for (const auto& Pair : StatInstance)
 	{
 		if (!StatInstance.Contains(Pair.Key))
 		{
 			InitializeStat(Pair.Key, Pair.Value);
 		}
-	}
+	}*/
 }
 
 UEntities_DataAssetMain* UEntities_StatComponent::GetEntityData() const
@@ -1094,4 +1106,19 @@ UEntities_DataAssetMain* UEntities_StatComponent::GetEntityData() const
 		}
 	}
 	return nullptr;	
+}
+
+const UStatConfigDataAsset* UEntities_StatComponent::GetStatConfig() const
+{
+	if (const UWorld* World = GetWorld())
+	{
+		if (const UGameInstance* GameInst = World->GetGameInstance())
+		{
+			if (const UStatConfigSubsystem* ConfSys = GameInst->GetSubsystem<UStatConfigSubsystem>())
+			{
+				return ConfSys->GetStatConfig();
+			}
+		}
+	}
+	return nullptr;
 }

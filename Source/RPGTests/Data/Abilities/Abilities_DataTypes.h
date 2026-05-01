@@ -2,43 +2,48 @@
 
 #pragma once
 #include "UObject/ObjectMacros.h"
+#include "RPGTests/Data/Entities/Entities_Tags.h"
 #include "Abilities_DataTypes.generated.h"
 
-UENUM()
-enum class EAbilities_Type
+
+USTRUCT(BlueprintType)
+struct FAbilities_DeployParams
 {
-	None,
-	Melee,
-	Ranged
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Range;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Reach;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Size;
+	
 };
 
-UENUM()
-enum class EAbilities_Shapes 
-{ 
-	None, 
-	SingleTarget, 
-	RoundAOE, 
-	RectangleAOE 
+USTRUCT(BlueprintType)
+struct FAbilities_Cost
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Cost;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Categories = "Stat.Resource"))
+	FGameplayTag CostType;
 };
 
-UENUM()
-enum class EAbilities_Uses 
-{ 
-	None, 
-	Damage, 
-	Buff, 
-	Heal, 
-	Support, 
-	Trap, 
-	Block 
-};
 
-UENUM()
-enum class EAbilities_Elements 
-{ 
-	None, 
-	Water, 
-	Fire, 
-	Eearth, 
-	Wind 
+USTRUCT(BlueprintType)
+struct FAbilities_Damage
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ScaleFactor;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (Categories = "Damage"))
+	FGameplayTag DamageType;
+	
 };

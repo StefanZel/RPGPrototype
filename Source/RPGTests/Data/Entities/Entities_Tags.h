@@ -125,16 +125,22 @@ namespace EntityTags
     
    namespace Ability
     {
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(Type);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypePhysical);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeMagic);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeFire);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeIce);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeHealing);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeBuff);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeDebuff);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeAura);
-        UE_DECLARE_GAMEPLAY_TAG_EXTERN(TypeCurse);
+        namespace Types
+        {
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Melee);   
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ranged);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Placeable);
+        }
+        namespace Uses
+        {
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Damage);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Heal);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Buff);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Debuff);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Aura);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Curse);
+        }
+        
     }
    
     namespace State

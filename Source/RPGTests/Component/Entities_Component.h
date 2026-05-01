@@ -55,6 +55,7 @@ public:
 	bool HasCompletedCommand(const FGuid Id);
 	bool HasActiveCommandFor();
 	void ExecuteNavigationCommand(UCommandBase* Command);
+	void ExecuteAbilityCommand(UCommandBase* Command);
 	void AssignCommand(UCommandBase* Command);
 
 protected:

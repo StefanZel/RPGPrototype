@@ -63,6 +63,7 @@ protected:
 	virtual void Input_CommandHold(const FInputActionValue& InputActionValue);
 	virtual void Input_CommandEnd(const FInputActionValue& InputActionValue);
 	virtual void Input_AbilitySelection(int32 AbilityId, const FInputActionValue& InputActionValue);
+	virtual void Input_CharacterSheet(const FInputActionValue& InputActionValue);
 
 private:
 

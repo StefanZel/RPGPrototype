@@ -19,5 +19,7 @@ public:
 	virtual void Undo() override;
 	virtual void Redo() override;
 	virtual void Fail() override;
+private:
 	
+	void ExecuteAbility();
 };

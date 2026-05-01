@@ -6,6 +6,7 @@
 #include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
 #include "RPGTests/Interfaces/Selectable.h"
 #include "RPGTests/Data/Entities/Entities_DataTypes.h"
+#include "RPGTests/UI/CharacterSheetWidget.h"
 #include "ControllerMain.generated.h"
 
 class APlayerMain;
@@ -48,6 +49,7 @@ public:
 	virtual void CommandMoveHold() override;
 	virtual void CommandMoveEnd() override;
 	virtual void SelectAbility(int32 AbilitySlot) override;
+	virtual void ToggleCharacterSheet() override;
 
 	FOnMapDataLoadedDelegate OnMapDataLoaded;
 	FPrimaryAssetId GetMapData() const { return MapData; }
@@ -91,7 +93,12 @@ protected:
     	FPrimaryAssetId MapData;
 
 private:
-
+	
+	UPROPERTY()
+	UCharacterSheetWidget* CharacterSheetWidget;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UCharacterSheetWidget> CharacterSheetClass;
 	
 	UPROPERTY()
 	FVector SelectStartWorldLocation;

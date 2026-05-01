@@ -137,7 +137,7 @@ float UEntities_AbilityComponent::GetAbilityRange()
 
 	if (const UAbilities_NormalDataAsset* Data = GetAbilityData())
 	{
-		return Data->XRange;
+		return Data->DeployParams.Range;
 	}
 	return DefaultRange;
 }

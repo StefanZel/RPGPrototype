@@ -5,9 +5,11 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "RPGTests/Data/Entities/Entities_DataAssetMain.h"
+#include "RPGTests/Data/Entities/StatConfigDataAsset.h"
 #include "Entities_StatComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnStatChanged, FGameplayTag, StatTag, float, OldValue, float, NewValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnResourceChanged, FGameplayTag, ResourceTag, float, Current, float, Max);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnModifierApplied, const FActiveModifier&, Modifier);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnModifierRemoved, const FActiveModifier&, Modifier);
 
@@ -25,32 +27,52 @@ public:
 	
 	void ResetStats();
 	
+	UFUNCTION(BlueprintCallable)
 	float GetStatValue(FGameplayTag StatTag);
-	float GetBaseStatValue(FGameplayTag StatTag) const;
+	float GetBaseStatValue(FGameplayTag StatTag);
 	void SetBaseStatValue(FGameplayTag StatTag, float NewValue);
+	
+	UFUNCTION(BlueprintCallable)
 	FStatInstance GetStatInstance(FGameplayTag StatTag) const;
+	
+	UFUNCTION(BlueprintCallable)
 	TMap<FGameplayTag, FStatInstance> GetAllStats() const { return StatInstance; }
 	
-	float GetCurrentResource(FGameplayTag ResourceTag) const;
+	UFUNCTION(BlueprintCallable)
+	float GetResourceCurrent(FGameplayTag ResourceTag) const;
+	
 	void SetCurrentResource(FGameplayTag ResourceTag, float NewValue);
 	float ModifyCurrentResource(FGameplayTag ResourceTag, float Delta);
-	float GetMaxResource(FGameplayTag ResourceTag);
+	
+	UFUNCTION(BlueprintCallable)
+	float GetResourceMax(FGameplayTag ResourceTag);
+	UFUNCTION(BlueprintCallable)
 	bool HasEnoughResources(FGameplayTag ResourceTag, float Amount) const;
+	
+	void FillResource(FGameplayTag ResourceTag);
+	void FillAllResources();
+	
+	UFUNCTION(BlueprintCallable)
+	TMap<FGameplayTag, FResourceInstance> GetAllResources() const { return ResourceInstance; }
 	
 	FGuid AddModifier(const FStatModifier& Modifier, int32 Duration = 0, int32 Stacks = 1);
 	bool RemoveModifier(FGuid ModifierId);
 	void RemoveModifierBySource(const FName& SourceName);
 	void RemoveModifierBySourceType(FGameplayTag SourceType);
 	void ClearAllModifiers();
-	TArray<FActiveModifier> GetActiveModifiers() const { return ActiveModifiers; }
+	
+	UFUNCTION(BlueprintCallable)
+	TArray<FActiveModifier> GetActiveModifiers() const;
+	UFUNCTION(BlueprintCallable)
 	TArray<FActiveModifier> GetModifiersForStat(FGameplayTag StatTag) const;
+	
+	void TickModifiers(int32 ActionPointsSpent);
 	
 	void AddStateTag(FGameplayTag StateTag);
 	void RemoveStateTag(FGameplayTag StateTag);
 	bool HasStateTag(FGameplayTag StateTag) const;
 	FGameplayTagContainer GetStateTags() const { return EntityStateTags; }
 	
-	void RecalculateStatAndDependants(FGameplayTag StatTag);
 	void RecalculateAllStats();
 	
 	void MarkStatDirty(FGameplayTag StatTag);
@@ -63,22 +85,26 @@ public:
 	FOnStatChanged OnStatChanged;
 	
 	UPROPERTY(BlueprintAssignable, Category="Stats|Events")
+	FOnResourceChanged OnResourceChanged;
+	
+	UPROPERTY(BlueprintAssignable, Category="Stats|Events")
 	FOnModifierApplied OnModifierApplied;
 	
 	UPROPERTY(BlueprintAssignable, Category="Stats|Events")
-	FOnModifierApplied OnModifierRemoved;
+	FOnModifierRemoved OnModifierRemoved;
 	
 protected:
 	void InitializeBaseStats(UEntities_DataAssetMain* DataAsset);
+	void InitializeResources(UEntities_DataAssetMain* DataAsset);
 	void RegisterScalingRules(UEntities_DataAssetMain* DataAsset);
+	void ApplyConfigModifiers(UEntities_DataAssetMain* DataAsset);
 	
 	void BuildDependencyGraph();
 	void BuildCalculationOrder();
 	
 	void ExecuteStatCalculation(FGameplayTag StatTag);
-	//void RecalculateStatFrom(FGameplayTag StartStatTag);
 	void GatherModifiersFromStat(FGameplayTag StatTag, FModifierBuckets& OutBuckets);
-	void RecalculateCurrentStat(const FGameplayTag& StatTag, float NewValue, float OldMax);
+	void OnResourceMaxChanged(const FGameplayTag& ResourceTag, float OldMax, float NewMax);
 	bool EvaluateConditionQuery(const FGameplayTagQuery& Query) const;
 	void ApplyModifierToBucket(FModifierBuckets& Buckets, EStatModifierType ModType, float Value) const;
 	
@@ -103,22 +129,16 @@ protected:
 	TMap<FGameplayTag, FStatInstance> StatInstance;
 	
 	UPROPERTY()
-	TArray<FActiveModifier> ActiveModifiers;
+	TMap<FGameplayTag, FResourceInstance> ResourceInstance;
 	
+	UPROPERTY()
+	TMap<FGuid, FActiveModifier> ActiveModifiers;
+
 	UPROPERTY()
 	FGameplayTagContainer EntityStateTags;
 	
 	UPROPERTY()
-	TMap<FGuid, int32> ModifierIndexMap;
-	
-	UPROPERTY()
 	TMap<FGameplayTag, FStatDependencyNode> DependencyGraph;
-	
-	UPROPERTY()
-	TMap<FGameplayTag, float> BaseStatValue;
-	
-	UPROPERTY()
-	TMap<FGameplayTag, float> CurrentResourceValues;
 	
 	UPROPERTY()
 	TArray<FGameplayTag> CalculationOrder;
@@ -134,8 +154,10 @@ protected:
 	
 
 private:
-	void InitializeStat(FGameplayTag StatTag, float BaseValue, float MinValue = 0.f, float MaxValue = 999999.f, bool bIsResource = false);
+	void InitializeStat(FGameplayTag StatTag, float BaseValue);
+	void InitializeResource(FGameplayTag StatTag, float MaxValue = 999999.f);
 	void ValidateStatInstance();
 	UEntities_DataAssetMain* GetEntityData() const;
+	const UStatConfigDataAsset* GetStatConfig() const;
 
 };

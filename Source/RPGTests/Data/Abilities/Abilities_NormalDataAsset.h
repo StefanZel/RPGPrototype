@@ -35,36 +35,25 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
 	TSoftObjectPtr<UStaticMesh> MeshComponent;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	EAbilities_Type Type;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	EAbilities_Shapes Shape;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	EAbilities_Uses Use;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	EAbilities_Elements Element;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs", Meta = (Categories = "Ability.Type"))
+	FGameplayTag Type;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs", Meta = (Categories = "Ability.Use"))
+	FGameplayTag Use;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
 	EEntities_MovementTypes AbilityMovement;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	float Reach;
+	FAbilities_DeployParams DeployParams;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
+	FAbilities_Cost AbilityCost;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	float XRange;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
-	float YRange;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Stats")
-	int BaseDamage;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Stats")
-	float DamageScaleFactor;
+	FAbilities_Damage AbilityDamage;
+	
 };
 
 

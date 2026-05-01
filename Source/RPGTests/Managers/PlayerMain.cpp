@@ -67,6 +67,7 @@ void APlayerMain::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 				InputActions::Bind_Trigger(EnhancedInputComponent, InputData->Zoom, this, &APlayerMain::Input_Zoom);
 				InputActions::Bind_Trigger(EnhancedInputComponent, InputData->Rotate, this, &APlayerMain::Input_Rotate);
 				InputActions::Bind_Start(EnhancedInputComponent, InputData->Select, this, &APlayerMain::Input_Select);
+				InputActions::Bind_Start(EnhancedInputComponent, InputData->CharacterSheet, this, &APlayerMain::Input_CharacterSheet);
 
 				InputActions::Bind_StartTriggerComplete(EnhancedInputComponent, InputData->Command, this, &APlayerMain::Input_Command, &APlayerMain::Input_CommandHold, &APlayerMain::Input_CommandEnd);
 
@@ -296,6 +297,17 @@ void APlayerMain::Input_AbilitySelection(int32 AbilityId, const FInputActionValu
 		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
 		{
 			Selectable->SelectAbility(AbilityId);
+		}
+	}
+}
+
+void APlayerMain::Input_CharacterSheet(const FInputActionValue& InputActionValue)
+{
+	if (GetController())
+	{
+		if (ISelectable* Selectable = Cast<ISelectable>(GetController()))
+		{
+			Selectable->ToggleCharacterSheet();
 		}
 	}
 }
