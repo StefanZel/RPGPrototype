@@ -9,6 +9,7 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "RPGTests/Commands/CommandBase.h"
+#include "RPGTests/Commands/ReservedCommand.h"
 #include "Entities_Component.generated.h"
 
 
@@ -56,7 +57,12 @@ public:
 	bool HasActiveCommandFor();
 	void ExecuteNavigationCommand(UCommandBase* Command);
 	void ExecuteAbilityCommand(UCommandBase* Command);
+	void ExecuteReservedCommand(UCommandBase* Command);
 	void AssignCommand(UCommandBase* Command);
+	void ReserveCommand(UCommandBase* Command);
+	void ConsumeReservedCommand(UCommandBase* Command);
+	UCommandBase* FindReservedCommand(UCommandBase* Command);
+	UCommandBase* FindTriggeredReservedCommand(const FEntities_CommandData& IncomingCommand) const;
 
 protected:
 	UPROPERTY()
@@ -64,6 +70,9 @@ protected:
 
 	UPROPERTY()
 	TArray<UCommandBase*> CommandHistory;
+	
+	UPROPERTY()
+	TArray<UCommandBase*> ReservedCommands;
 
 
 

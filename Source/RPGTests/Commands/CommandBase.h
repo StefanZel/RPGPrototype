@@ -23,8 +23,6 @@ public:
 	UCommandBase();
 
 	virtual void Execute();
-	virtual void Undo() PURE_VIRTUAL(UCommandBase::Undo, ;);
-	virtual void Redo() PURE_VIRTUAL(UCommandBase::Redo, ;);
 	virtual void Fail();
 	virtual void Complete(const UEntities_Component* Entity, const EEntities_CommandStatus StatusUpdate);
 

@@ -54,6 +54,9 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs")
 	FAbilities_Damage AbilityDamage;
 	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Ability Specs", Meta = (Categories = "Ability, Damage"))
+	FGameplayTagContainer TriggeredBy;
+	
 };
 
 

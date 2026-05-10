@@ -4,20 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "CommandBase.h"
-#include "AbilityCommand.generated.h"
+#include "ReservedCommand.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class RPGTESTS_API UAbilityCommand : public UCommandBase
+class RPGTESTS_API UReservedCommand : public UCommandBase
 {
 	GENERATED_BODY()
 public:
-	
 	virtual void Execute() override;
 	virtual void Fail() override;
-private:
-	
-	void ExecuteAbility();
+protected:
+	void ExecuteReserved();
 };

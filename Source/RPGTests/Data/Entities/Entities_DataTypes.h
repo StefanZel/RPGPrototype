@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "GameplayTagContainer.h"
 
 #include "Entities_DataTypes.generated.h"
 
@@ -29,7 +30,10 @@ enum class EEntities_CommandTypes : uint8
 	None,
 	Navigation,
 	Ability,
-	AbilityNavigation
+	AbilityNavigation,
+	UseItem,
+	Interact,
+	Reserved
 };
 
 UENUM()
@@ -57,8 +61,6 @@ enum class EEntities_CommandStatus : uint8
 	None,
 	Active,
 	Updating,
-	Undo,
-	Redo,
 	Completed,
 	Failed,
 	Preview
@@ -185,6 +187,11 @@ struct FEntities_Ability
 	UPROPERTY()
 	TWeakObjectPtr<AActor> AbilityPtr;
 	
+	UPROPERTY()
+	int32 AbilityCost;
+	
+	UPROPERTY()
+	FGameplayTagContainer TriggeredBy;
 };
 
 USTRUCT(BlueprintType)
@@ -193,19 +200,6 @@ struct FEntities_CommandData
 	GENERATED_BODY();
 
 public:
-	FEntities_CommandData(): 
-		Id(FGuid::NewGuid()),
-		CommandType(EEntities_CommandTypes::None),
-		MovementType(EEntities_MovementTypes::None),
-		CommandStatus(EEntities_CommandStatus::None),
-		TargetTransform(FTransform::Identity),
-		SourceTransform(FTransform::Identity),
-		SourceActor(nullptr),
-		TargetActor(nullptr),
-		Navigation(FEntities_Navigation()),
-		AbilityData(FEntities_Ability())
-	{}
-
 	//bool IsValid() const { return MovementType != EEntities_MovementTypes::None; }
 	void ApplyBaseData(const FEntities_BaseCommandData& BaseData);
 	bool HasNavigation() const { return MovementType != EEntities_MovementTypes::None; }
@@ -214,32 +208,32 @@ public:
 	FRotator GetRotation() const { return TargetTransform.GetRotation().Rotator(); }
 
 	UPROPERTY()
-	FGuid Id;
+	FGuid Id = FGuid::NewGuid();
 
 	UPROPERTY()
-	EEntities_CommandTypes CommandType;
+	EEntities_CommandTypes CommandType = EEntities_CommandTypes::None;
 	
 	UPROPERTY()
-	EEntities_MovementTypes MovementType;
+	EEntities_MovementTypes MovementType = EEntities_MovementTypes::None;
 
 	UPROPERTY()
-	EEntities_CommandStatus CommandStatus;
+	EEntities_CommandStatus CommandStatus = EEntities_CommandStatus::None;
 
 	UPROPERTY()
-	FTransform TargetTransform;
+	FTransform TargetTransform = FTransform::Identity;
 
 	UPROPERTY()
-	FTransform SourceTransform;
+	FTransform SourceTransform = FTransform::Identity;
 
 	UPROPERTY()
-	AActor* SourceActor;
+	AActor* SourceActor = nullptr;
 
 	UPROPERTY()
-	AActor* TargetActor;
+	TArray<AActor*> TargetActors;
 
 	UPROPERTY()
-	FEntities_Navigation Navigation;
+	FEntities_Navigation Navigation = FEntities_Navigation();
 	
 	UPROPERTY()
-	FEntities_Ability AbilityData;
+	FEntities_Ability AbilityData = FEntities_Ability();
 };

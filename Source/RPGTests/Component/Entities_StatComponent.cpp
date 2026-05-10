@@ -4,7 +4,7 @@
 #include "Engine/AssetManager.h"
 #include "RPGTests/Data/Entities/Entities_Tags.h"
 #include "RPGTests/Data/Entities/StatConfigDataAsset.h"
-#include "RPGTests/SubSystems/StatConfigSubsystem.h"
+#include "RPGTests/Subsystems/StatConfigSubsystem.h"
 
 
 UEntities_StatComponent::UEntities_StatComponent(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)

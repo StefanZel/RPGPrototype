@@ -17,8 +17,6 @@ public:
 	UNavigationCommand();
 
 	virtual void Execute() override;
-	virtual void Undo() override;
-	virtual void Redo() override;
 	virtual void Fail() override;
 	virtual void Complete(const UEntities_Component* Entity, const EEntities_CommandStatus StatusUpdate) override;
 

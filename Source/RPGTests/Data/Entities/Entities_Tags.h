@@ -59,20 +59,10 @@ namespace EntityTags
         namespace Resources
         {
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(Health);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(HealthMax);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(HealthCurrent);
-            
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(Mana);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(ManaMax);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(ManaCurrent);
-            
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(Stamina);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(StaminaMax);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(StaminaCurrent);
-            
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(EnergyShield);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(EnergyShieldMax);
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(EnergyShieldCurrent);
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(ActionPoints);
         }
         
         namespace Secondaries
@@ -127,7 +117,7 @@ namespace EntityTags
     {
         namespace Types
         {
-            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Melee);   
+            UE_DECLARE_GAMEPLAY_TAG_EXTERN(Melee);
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(Ranged);
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(Placeable);
         }
@@ -168,18 +158,8 @@ namespace EntityTags
             UE_DECLARE_GAMEPLAY_TAG_EXTERN(Environment);
         }
     }
-    
-    void InitializeResourceMappings();
-    FGameplayTag GetResourceMaxTag(const FGameplayTag& ResourceCurrentTag);
-    FGameplayTag GetResourceCurrentTag(const FGameplayTag& ResourceMaxTag);
-    FGameplayTag GetResourceBaseTag(const FGameplayTag& ResourceTag);
-    FGameplayTag GetResourceMaxTagFromBase(const FGameplayTag& ResourceTag);
-    FGameplayTag GetResourceCurrentTagFromBase(const FGameplayTag& ResourceTag);
-    bool IsResourceMaxTag(const FGameplayTag& Tag);
-    bool IsResourceCurrentTag(const FGameplayTag& Tag);
-    bool IsResourceBaseTag(const FGameplayTag& Tag);
-    
-    
+    void InitializeAttackCounterMappings();
+    FGameplayTag GetAttackCounter(const FGameplayTag& Tag);
     bool IsStatTag(const FGameplayTag& Tag);
     bool IsResourceTag(const FGameplayTag& Tag);
     bool IsDamageTag(const FGameplayTag& Tag);
@@ -192,6 +172,5 @@ namespace EntityTags
     const FGameplayTagContainer& GetAllAttributeTags();
     const FGameplayTagContainer& GetAllDefenseTags();
     const FGameplayTagContainer& GetAllOffenseTags();
-    const FGameplayTagContainer& GetAllResourceTags();
     const FGameplayTagContainer& GetPhysicalDamageTags();
 }

@@ -2,7 +2,6 @@
 
 namespace EntityTags
 {
-
     UE_DEFINE_GAMEPLAY_TAG(Root_Stat, "Stat");
     UE_DEFINE_GAMEPLAY_TAG(Root_Condition, "Condition");
     UE_DEFINE_GAMEPLAY_TAG(Root_Damage, "Damage");
@@ -57,20 +56,11 @@ namespace EntityTags
         namespace Resources
         {
             UE_DEFINE_GAMEPLAY_TAG(Health, "Stat.Resource.Health");
-            UE_DEFINE_GAMEPLAY_TAG(HealthMax, "Stat.Resource.Health.Max");
-            UE_DEFINE_GAMEPLAY_TAG(HealthCurrent, "Stat.Resource.Health.Current");
-            
             UE_DEFINE_GAMEPLAY_TAG(Mana, "Stat.Resource.Mana");
-            UE_DEFINE_GAMEPLAY_TAG(ManaMax, "Stat.Resource.Mana.Max");
-            UE_DEFINE_GAMEPLAY_TAG(ManaCurrent, "Stat.Resource.Mana.Current");
-            
             UE_DEFINE_GAMEPLAY_TAG(Stamina, "Stat.Resource.Stamina");
-            UE_DEFINE_GAMEPLAY_TAG(StaminaMax, "Stat.Resource.Stamina.Max");
-            UE_DEFINE_GAMEPLAY_TAG(StaminaCurrent, "Stat.Resource.Stamina.Current");
-            
             UE_DEFINE_GAMEPLAY_TAG(EnergyShield, "Stat.Resource.EnergyShield");
-            UE_DEFINE_GAMEPLAY_TAG(EnergyShieldMax, "Stat.Resource.EnergyShield.Max");
-            UE_DEFINE_GAMEPLAY_TAG(EnergyShieldCurrent, "Stat.Resource.EnergyShield.Current");
+            UE_DEFINE_GAMEPLAY_TAG(ActionPoints, "Stat.Resource.ActionPoints");
+
         }
         
         namespace Secondaries
@@ -171,132 +161,33 @@ namespace EntityTags
     }
     namespace Private
     {
-        static bool bResourceMappingsInitialized = false;
+        static bool IsAttackCounterInitialized = false;
         
-        void EnsureResourceMappings()
+        void EnsureAttackCounterInitialized()
         {
-            if (!bResourceMappingsInitialized)
+            if (!IsAttackCounterInitialized)
             {
-                InitializeResourceMappings();
-                bResourceMappingsInitialized = true;
+                InitializeAttackCounterMappings();
+                IsAttackCounterInitialized = true;
             }
         }
         
-        static TMap<FGameplayTag, FGameplayTag> ResourceMaxToCurrent;
-        static TMap<FGameplayTag, FGameplayTag> ResourceCurrentToMax;
-        static TMap<FGameplayTag, FGameplayTag> ResourceVariantToBase;
-        static TMap<FGameplayTag, FGameplayTag> ResourceBaseToMax;
-        static TMap<FGameplayTag, FGameplayTag> ResourceBaseToCurrent;
+        static TMap<FGameplayTag, FGameplayTag> AttackVersusDefense;
         
-        static TOptional<FGameplayTagContainer> AllResourceMaxTags;
-        static TOptional<FGameplayTagContainer> AllResourceCurrentTags;
-        static TOptional<FGameplayTagContainer> AllResourceBaseTags;
-        
-        void InitializeResourceMappings()
+        void InitializeAttackCounterMappings()
         {
-            ResourceMaxToCurrent.Add(Stat::Resources::HealthMax, Stat::Resources::HealthCurrent);
-            ResourceCurrentToMax.Add(Stat::Resources::HealthCurrent, Stat::Resources::HealthMax);
-            ResourceVariantToBase.Add(Stat::Resources::HealthMax, Stat::Resources::Health);
-            ResourceVariantToBase.Add(Stat::Resources::HealthCurrent, Stat::Resources::Health);
-            ResourceBaseToMax.Add(Stat::Resources::Health, Stat::Resources::HealthMax);
-            ResourceBaseToCurrent.Add(Stat::Resources::Health, Stat::Resources::HealthCurrent);
-
-            ResourceMaxToCurrent.Add(Stat::Resources::ManaMax, Stat::Resources::ManaCurrent);
-            ResourceCurrentToMax.Add(Stat::Resources::ManaCurrent, Stat::Resources::ManaMax);
-            ResourceVariantToBase.Add(Stat::Resources::ManaMax, Stat::Resources::Mana);
-            ResourceVariantToBase.Add(Stat::Resources::ManaCurrent, Stat::Resources::Mana);
-            ResourceBaseToMax.Add(Stat::Resources::Mana, Stat::Resources::ManaMax);
-            ResourceBaseToCurrent.Add(Stat::Resources::Mana, Stat::Resources::ManaCurrent);
-
-            ResourceMaxToCurrent.Add(Stat::Resources::StaminaMax, Stat::Resources::StaminaCurrent);
-            ResourceCurrentToMax.Add(Stat::Resources::StaminaCurrent, Stat::Resources::StaminaMax);
-            ResourceVariantToBase.Add(Stat::Resources::StaminaMax, Stat::Resources::Stamina);
-            ResourceVariantToBase.Add(Stat::Resources::StaminaCurrent, Stat::Resources::Stamina);
-            ResourceBaseToMax.Add(Stat::Resources::Stamina, Stat::Resources::StaminaMax);
-            ResourceBaseToCurrent.Add(Stat::Resources::Stamina, Stat::Resources::StaminaCurrent);
-
-            ResourceMaxToCurrent.Add(Stat::Resources::EnergyShieldMax, Stat::Resources::EnergyShieldCurrent);
-            ResourceCurrentToMax.Add(Stat::Resources::EnergyShieldCurrent, Stat::Resources::EnergyShieldMax);
-            ResourceVariantToBase.Add(Stat::Resources::EnergyShieldMax, Stat::Resources::EnergyShield);
-            ResourceVariantToBase.Add(Stat::Resources::EnergyShieldCurrent, Stat::Resources::EnergyShield);
-            ResourceBaseToMax.Add(Stat::Resources::EnergyShield, Stat::Resources::EnergyShieldMax);
-            ResourceBaseToCurrent.Add(Stat::Resources::EnergyShield, Stat::Resources::EnergyShieldCurrent);
-            
-            AllResourceMaxTags.Emplace();
-            AllResourceCurrentTags.Emplace();
-            AllResourceBaseTags.Emplace();
-            for (const auto& Pair : ResourceMaxToCurrent)
-            {
-                AllResourceMaxTags->AddTag(Pair.Key);
-                AllResourceCurrentTags->AddTag(Pair.Value);
-            }
-            for (const auto& Pair : ResourceBaseToMax)
-            {
-                AllResourceBaseTags->AddTag(Pair.Key);
-            }
+            AttackVersusDefense.Add(Damage::Physical, Stat::Defenses::Armor);
+            AttackVersusDefense.Add(Damage::Magic, Stat::Defenses::MagicResist);
+            AttackVersusDefense.Add(Damage::Fire, Stat::Defenses::FireResist);
+            AttackVersusDefense.Add(Damage::Ice, Stat::Defenses::IceResist);
+            AttackVersusDefense.Add(Damage::Lightning, Stat::Defenses::LightningResist);
         }
-    }
-    void InitializeResourceMappings()
-    {
-        Private::InitializeResourceMappings();
-    }
-    
-    FGameplayTag GetResourceMaxTag(const FGameplayTag& ResourceCurrentTag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceCurrentToMax.FindRef(ResourceCurrentTag);
-    }
-    
-    FGameplayTag GetResourceCurrentTag(const FGameplayTag& ResourceMaxTag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceMaxToCurrent.FindRef(ResourceMaxTag);
-    }
-    
-    FGameplayTag GetResourceBaseTag(const FGameplayTag& ResourceVariantTag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceVariantToBase.FindRef(ResourceVariantTag);
-    }
-
-    FGameplayTag GetResourceMaxTagFromBase(const FGameplayTag& ResourceTag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceBaseToMax.FindRef(ResourceTag);
-    }
-
-    FGameplayTag GetResourceCurrentTagFromBase(const FGameplayTag& ResourceTag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceBaseToCurrent.FindRef(ResourceTag);
-    }
-
-    bool IsResourceMaxTag(const FGameplayTag& Tag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceMaxToCurrent.Contains(Tag);
-    }
-    
-    bool IsResourceCurrentTag(const FGameplayTag& Tag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceCurrentToMax.Contains(Tag);
-    }
-
-    bool IsResourceBaseTag(const FGameplayTag& Tag)
-    {
-        Private::EnsureResourceMappings();
-        return Private::ResourceBaseToMax.Contains(Tag);
-    }
-
-    namespace Private
-    {
+        
         static TOptional<FGameplayTagContainer> GAllAttributeTags;
         static TOptional<FGameplayTagContainer> GAllDefenseTags;
         static TOptional<FGameplayTagContainer> GAllOffenseTags;
-        static TOptional<FGameplayTagContainer> GAllResourceTags;
         static TOptional<FGameplayTagContainer> GPhysicalDamageTags;
-        
+    
         void InitializeContainers()
         {
             if (!GAllAttributeTags.IsSet())
@@ -309,7 +200,7 @@ namespace EntityTags
                 GAllAttributeTags->AddTag(Stat::Attributes::Wisdom);
                 GAllAttributeTags->AddTag(Stat::Attributes::Charisma);
             }
-            
+        
             if (!GAllDefenseTags.IsSet())
             {
                 GAllDefenseTags.Emplace();
@@ -323,7 +214,7 @@ namespace EntityTags
                 GAllDefenseTags->AddTag(Stat::Defenses::BlockChance);
                 GAllDefenseTags->AddTag(Stat::Defenses::ParryChance);
             }
-            
+        
             if (!GAllOffenseTags.IsSet())
             {
                 GAllOffenseTags.Emplace();
@@ -336,20 +227,8 @@ namespace EntityTags
                 GAllOffenseTags->AddTag(Stat::Offenses::AttackSpeed);
                 GAllOffenseTags->AddTag(Stat::Offenses::CastSpeed);
             }
-            
-            if (!GAllResourceTags.IsSet())
-            {
-                GAllResourceTags.Emplace();
-                GAllResourceTags->AddTag(Stat::Resources::HealthMax);
-                GAllResourceTags->AddTag(Stat::Resources::HealthCurrent);
-                GAllResourceTags->AddTag(Stat::Resources::ManaMax);
-                GAllResourceTags->AddTag(Stat::Resources::ManaCurrent);
-                GAllResourceTags->AddTag(Stat::Resources::StaminaMax);
-                GAllResourceTags->AddTag(Stat::Resources::StaminaCurrent);
-                GAllResourceTags->AddTag(Stat::Resources::EnergyShieldMax);
-                GAllResourceTags->AddTag(Stat::Resources::EnergyShieldCurrent);
-            }
-            
+        
+        
             if (!GPhysicalDamageTags.IsSet())
             {
                 GPhysicalDamageTags.Emplace();
@@ -357,22 +236,33 @@ namespace EntityTags
             }
         }
     }
- 
+
+    void InitializeAttackCounterMappings()
+    {
+        Private::InitializeAttackCounterMappings();
+    }
+
+    FGameplayTag GetAttackCounter(const FGameplayTag& Tag)
+    {
+        Private::EnsureAttackCounterInitialized();
+        return Private::AttackVersusDefense.FindRef(Tag);
+    }
+    
     bool IsStatTag(const FGameplayTag& Tag)
     {
         return Tag.MatchesTag(Root_Stat);
     }
-    
+
     bool IsResourceTag(const FGameplayTag& Tag)
     {
         return Tag.MatchesTag(Stat::Resource);
     }
-    
+
     bool IsDamageTag(const FGameplayTag& Tag)
     {
         return Tag.MatchesTag(Root_Damage);
     }
-    
+
     FGameplayTag GetStatCategory(const FGameplayTag& Tag)
     {
         if (Tag.MatchesTag(Stat::Attribute)) return Stat::Attribute;
@@ -380,34 +270,28 @@ namespace EntityTags
         if (Tag.MatchesTag(Stat::Offense)) return Stat::Offense;
         if (Tag.MatchesTag(Stat::Resource)) return Stat::Resource;
         if (Tag.MatchesTag(Stat::Secondary)) return Stat::Secondary;
-        
+    
         return FGameplayTag::EmptyTag;
     }
-    
+
     const FGameplayTagContainer& GetAllAttributeTags()
     {
         Private::InitializeContainers();
         return Private::GAllAttributeTags.GetValue();
     }
-    
+
     const FGameplayTagContainer& GetAllDefenseTags()
     {
         Private::InitializeContainers();
         return Private::GAllDefenseTags.GetValue();
     }
-    
+
     const FGameplayTagContainer& GetAllOffenseTags()
     {
         Private::InitializeContainers();
         return Private::GAllOffenseTags.GetValue();
     }
-    
-    const FGameplayTagContainer& GetAllResourceTags()
-    {
-        Private::InitializeContainers();
-        return Private::GAllResourceTags.GetValue();
-    }
-    
+
     const FGameplayTagContainer& GetPhysicalDamageTags()
     {
         Private::InitializeContainers();

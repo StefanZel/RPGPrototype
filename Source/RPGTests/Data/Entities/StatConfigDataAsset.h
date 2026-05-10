@@ -14,7 +14,7 @@ struct FStatConfig
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(Categories="Stats"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(Categories="Stat"))
 	FGameplayTag StatTag;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -50,7 +50,7 @@ struct FResourceConfig
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(Categories="Stats.Resource"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta=(Categories="Stat.Resource"))
 	FGameplayTag ResourceTag;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -88,10 +88,10 @@ class RPGTESTS_API UStatConfigDataAsset : public UDataAsset
 {
 	GENERATED_BODY()
 public:
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (GameplayTagFilter = "Stat"))
 	TMap<FGameplayTag, FStatConfig> Configs;
 	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Stats")
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, meta = (GameplayTagFilter = "Stat.Resource"))
 	TMap<FGameplayTag, FResourceConfig> ResourceConfigs;
 	
 	const FStatConfig* GetConfig(const FGameplayTag& StatTag) const

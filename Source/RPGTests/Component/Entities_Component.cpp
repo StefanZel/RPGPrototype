@@ -4,6 +4,8 @@
 #include "Engine/AssetManager.h"
 #include "Components/BoxComponent.h"
 #include "RPGTests/Ai/Entities_AiControllerCommand.h"
+#include "RPGTests/Data/Abilities/Abilities_NormalDataAsset.h"
+#include "RPGTests/Managers/CustomAssetManager.h"
 
 
 UEntities_Component::UEntities_Component(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
@@ -221,6 +223,21 @@ void UEntities_Component::ExecuteAbilityCommand(UCommandBase* Command)
 	AssignCommand(Command);
 }
 
+void UEntities_Component::ExecuteReservedCommand(UCommandBase* Command)
+{
+	if (Command == nullptr) return;
+	
+	AActor* CurrentOwner = GetOwner();
+	if (const APawn* EntityPawn = Cast<APawn>(CurrentOwner))
+	{
+		if (AEntities_AiControllerCommand* AiController = Cast<AEntities_AiControllerCommand>(EntityPawn->GetController()))
+		{
+			AiController->ExecuteCommand(Command);	
+		}
+	}
+	
+}
+
 void UEntities_Component::AssignCommand(UCommandBase* Command)
 {
 	AActor* CurrentOwner = GetOwner();
@@ -232,4 +249,49 @@ void UEntities_Component::AssignCommand(UCommandBase* Command)
 		}
 	}
 
+}
+
+void UEntities_Component::ReserveCommand(UCommandBase* Command)
+{
+	if (!Command) return;
+	
+	ReservedCommands.Add(Command);
+}
+
+void UEntities_Component::ConsumeReservedCommand(UCommandBase* Command)
+{
+	if (!Command) return;
+	ReservedCommands.Remove(Command);
+}
+
+UCommandBase* UEntities_Component::FindReservedCommand(UCommandBase* Command)
+{
+	if (const int32 CommandIndex = ReservedCommands.Find(Command))
+	{
+		return ReservedCommands[CommandIndex];
+	}
+	return nullptr;
+}
+
+UCommandBase* UEntities_Component::FindTriggeredReservedCommand(const FEntities_CommandData& IncomingCommand) const
+{
+	UAbilities_NormalDataAsset* IncomingAbility = UCustomAssetManager::Get().GetAsset<UAbilities_NormalDataAsset>(IncomingCommand.AbilityData.AbilityData);
+	
+	for (const auto& Reserved : ReservedCommands)
+	{
+		UAbilities_NormalDataAsset* ReservedAbility = UCustomAssetManager::Get().GetAsset<UAbilities_NormalDataAsset>(Reserved->Data.AbilityData.AbilityData);
+		
+		if (!ReservedAbility || !IncomingAbility) continue;
+		
+		FGameplayTagContainer CombinedTags;
+		CombinedTags.AddTag(IncomingAbility->Use);
+		CombinedTags.AddTag(IncomingAbility->AbilityDamage.DamageType);
+		CombinedTags.AddTag(IncomingAbility->Type);
+		
+		if (ReservedAbility->TriggeredBy.HasAny(CombinedTags))
+		{
+			return Reserved;
+		}
+	}
+	return nullptr;
 }

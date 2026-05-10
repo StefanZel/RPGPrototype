@@ -1,32 +1,34 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "AbilityCommand.h"
+#include "ReservedCommand.h"
+
 #include "RPGTests/Component/Entities_Component.h"
 
-void UAbilityCommand::Execute()
+void UReservedCommand::Execute()
 {
 	if (!IsValid())
 	{
 		Fail();
 	}
 	Super::Execute();
+	
 	if (Data.CommandStatus == EEntities_CommandStatus::Active)
 	{
-		ExecuteAbility();
+		ExecuteReserved();
 	}
 }
 
-void UAbilityCommand::Fail()
+void UReservedCommand::Fail()
 {
 	Super::Fail();
 }
 
-void UAbilityCommand::ExecuteAbility()
+void UReservedCommand::ExecuteReserved()
 {
 	if (GEngine != nullptr)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Black, FString::Printf(TEXT("Executed Ability for Command:[%s]"), *Data.Id.ToString()));
+		GEngine->AddOnScreenDebugMessage(-1, 7.f, FColor::Black, FString::Printf(TEXT("Executed Reserved for Command:[%s]"), *Data.Id.ToString()));
 	}
 	if (IsValid())
 	{
@@ -34,10 +36,8 @@ void UAbilityCommand::ExecuteAbility()
 		{
 			if (!Entity->AssignedCommand(GetId()) && !Entity->HasCompletedCommand(GetId()))
 			{
-				Entity->ExecuteAbilityCommand(this);
+				Entity->ExecuteReservedCommand(this);
 			}
 		}
 	}
 }
-
-

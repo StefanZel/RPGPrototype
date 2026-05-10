@@ -24,14 +24,6 @@ void UNavigationCommand::Execute()
 	}
 }
 
-void UNavigationCommand::Undo()
-{
-}
-
-void UNavigationCommand::Redo()
-{
-}
-
 void UNavigationCommand::Fail()
 {
 	Super::Fail();

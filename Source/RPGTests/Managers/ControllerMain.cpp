@@ -304,7 +304,7 @@ void AControllerMain::UpdateCommandData(const FEntities_BaseCommandData& BaseCom
 	// TODO: Change this after refactoring actor spawning. Don't forget to change GetHitSelectable() to return actor on specific location
 	if (EnemySelected != nullptr)
 	{
-		CommandData.TargetActor = EnemySelected;
+		CommandData.TargetActors.Add(EnemySelected);
 	}
 
 	if (CommandData.HasNavigation())

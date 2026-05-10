@@ -47,7 +47,7 @@ struct FStatModifier
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stats"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stat"))
 	FGameplayTag TargetStat;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -71,7 +71,7 @@ struct FStatModifier
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Damage,Attack,Spell,Element"))
 	FGameplayTagContainer ModifierTags;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stats"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stat"))
 	FGameplayTag ConvertFromStat;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (EditCondition = "ModType == EStatModifierType::Convert"))
@@ -282,10 +282,10 @@ struct FStatScalingRule
 {
 	GENERATED_BODY()
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stats"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stat"))
 	FGameplayTag SourceStat;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stats"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(Categories="Stat"))
 	FGameplayTag TargetStat;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

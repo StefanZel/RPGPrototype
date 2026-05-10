@@ -4,39 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "BattleHandlers/DamageCalculator.h"
+#include "BattleHandlers/InitiativeHandler.h"
+#include "BattleHandlers/ReactionHandler.h"
+#include "RPGTests/Data/Battle/Battle_DataTypes.h"
+#include "RPGTests/Props/CommandResolutionStack.h"
 #include "Subsystems/WorldSubsystem.h"
 #include "BattleSubsystem.generated.h"
 
-UENUM()
-enum class EBattleState
-{
-	Exploration,
-	InBattle
-};
 
-USTRUCT()
-struct FTurnParticipant
-{
-	GENERATED_BODY()
-	
-	UPROPERTY()
-	TWeakObjectPtr<AActor> Actor;
-	
-	UPROPERTY()
-	float Initiative = 0.f;
-	
-	UPROPERTY()
-	int32 ActionPointsRemaining = 0;
-	
-	UPROPERTY()
-	FGameplayTag TeamTag;
-	
-	bool IsValid() const { return Actor.IsValid(); }
-	bool operator > (const FTurnParticipant& Other) const
-	{
-		return Initiative > Other.Initiative;
-	}
-};
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTurnChanged, const FTurnParticipant&, Participant);
 /**
@@ -47,14 +23,16 @@ class RPGTESTS_API UBattleSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 public:
+	
+	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
+	
 	void NotifyAttack(AActor* Attacker, AActor* Target);
 	void NotifySpotted(AActor* Spotter, AActor* Spotted);
 	void EnterCombat(const TArray<AActor*>& Participants);
 	void ExitCombat();
-	
 	void TryAddParticipant(AActor* Actor);
 	
-	void OnCommandCompleted(const FGuid CommandId, const uint8 bSuccess);
+	void SubmitCommand(UCommandBase* Command);
 	
 	void EndTurn();
 	
@@ -66,16 +44,19 @@ public:
 	
 	
 private:
-	void BuildInitiativeQueue(const TArray<AActor*>& Participants);
+	
+	void OnCommandCompleted(const FGuid CommandId, const uint8 bSuccess);
+	void OnCommandFailed(const FGuid CommandId);
+	void ProcessNextOnStack();
+	void FinalizeResolution();
+	
 	TArray<AActor*> GatherParticipants(const FVector& Origin, float Radius) const;
 	bool ShouldJoinCombat(const AActor* Actor) const;
 	bool IsAlreadyInCombat() const { return CurrentState != EBattleState::Exploration; }
-	bool CheckCombatEnd() const;
-	float GetInitiativeForActor(const AActor* Actor) const;
 	void StartTurn(FTurnParticipant& Participant);
-	void AdvanceTurn();
-	
 	void ApplyBattleTagToAll(const FGameplayTag& Tag, bool bAdd);
+	bool ValidateCommand(const UCommandBase* Command) const;
+	
 	// TODO: Have this in global config
 	static constexpr float EngagementRadius = 1500.f;
 	
@@ -83,10 +64,23 @@ private:
 	EBattleState CurrentState = EBattleState::Exploration;
 	
 	UPROPERTY()
-	TArray<FTurnParticipant> InitiativeQueue;
+	EResolutionState ResolutionState = EResolutionState::Idle;
 	
 	UPROPERTY()
-	int32 CurrentTurnIndex = 0;
+	TArray<UCommandBase*> Stack;
+	
+	UPROPERTY()
+	UCommandBase* SourceCommand = nullptr;
+	
+	UPROPERTY()
+	UDamageCalculator* DamageCalculator = nullptr;
+	
+	UPROPERTY()
+	UReactionHandler* ReactionHandler = nullptr;
+	
+	UPROPERTY()
+	UInitiativeHandler* InitiativeHandler = nullptr;
+	
 	
 	TArray<TWeakObjectPtr<AActor>> CombatParticipants;
 };
